@@ -283,7 +283,10 @@ function createMainWindow(): void {
             if (mainWindow) {
                 if (isQuit) {
                     mainWindow.webContents.send('application-close');
-                    isQuitting = true;
+                    setTimeout(() => {
+                        isQuitting = true;
+                        app.quit();
+                    }, 300); // 300ms to match the fade-out duration
                 }
                 // on MacOS, close button never closed entire app
                 else if (isMacOS()) {
@@ -292,7 +295,10 @@ function createMainWindow(): void {
                     mainWindow.hide();
                 } else {
                     mainWindow.webContents.send('application-close');
-                    isQuitting = true;
+                    setTimeout(() => {
+                        isQuitting = true;
+                        app.quit();
+                    }, 300); // 300ms to match the fade-out duration
                 }
             }
         }
@@ -522,8 +528,10 @@ try {
             });
         });
 
-        ipcMain.on('closing-tasks-performed', (_) => {
-            app.quit();
+        ipcMain.on('closing-tasks-performed', () => {
+            setTimeout(() => {
+                app.quit();
+            }, 300); // 300ms to match the fade-out duration
         });
 
         ipcMain.on('set-full-player', (event: any, arg: any) => {

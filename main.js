@@ -246,7 +246,10 @@ function createMainWindow() {
             if (mainWindow) {
                 if (isQuit) {
                     mainWindow.webContents.send('application-close');
-                    isQuitting = true;
+                    setTimeout(() => {
+                        isQuitting = true;
+                        electron_1.app.quit();
+                    }, 300); // 300ms to match the fade-out duration
                 }
                 // on MacOS, close button never closed entire app
                 else if (isMacOS()) {
@@ -257,7 +260,10 @@ function createMainWindow() {
                 }
                 else {
                     mainWindow.webContents.send('application-close');
-                    isQuitting = true;
+                    setTimeout(() => {
+                        isQuitting = true;
+                        electron_1.app.quit();
+                    }, 300); // 300ms to match the fade-out duration
                 }
             }
         }
@@ -444,8 +450,10 @@ try {
                 }
             });
         });
-        electron_1.ipcMain.on('closing-tasks-performed', (_) => {
-            electron_1.app.quit();
+        electron_1.ipcMain.on('closing-tasks-performed', () => {
+            setTimeout(() => {
+                electron_1.app.quit();
+            }, 300); // 300ms to match the fade-out duration
         });
         electron_1.ipcMain.on('set-full-player', (event, arg) => {
             settings.set('playerType', 'full');

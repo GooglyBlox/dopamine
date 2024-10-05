@@ -23,6 +23,7 @@ import { NotificationServiceBase } from '../notification/notification.service.ba
 import { TrackSorter } from '../../common/sorting/track-sorter';
 import { QueuePersister } from './queue-persister';
 import { QueueRestoreInfo } from './queue-restore-info';
+import { ElectronService } from '../electron.service';
 
 @Injectable()
 export class PlaybackService implements PlaybackServiceBase {
@@ -41,6 +42,8 @@ export class PlaybackService implements PlaybackServiceBase {
     private _canResume: boolean = true;
     private _volumeBeforeMute: number = 0;
     private subscription: Subscription = new Subscription();
+    private isInitialLoad: boolean = true;
+    private lastKnownPosition: number = 0;
 
     public constructor(
         private trackService: TrackServiceBase,
@@ -54,9 +57,13 @@ export class PlaybackService implements PlaybackServiceBase {
         private mathExtensions: MathExtensions,
         private settings: SettingsBase,
         private logger: Logger,
+        private electronService: ElectronService,
     ) {
         this.initializeSubscriptions();
         this.applyVolumeFromSettings();
+        this.electronService.ipcRenderer.on('application-close', () => {
+            this.smoothStop();
+        });
     }
 
     public get playbackQueue(): TrackModels {
@@ -268,7 +275,10 @@ export class PlaybackService implements PlaybackServiceBase {
         this._canPause = false;
         this._canResume = true;
         this.progressUpdater.pauseUpdatingProgress();
-        this.playbackPaused.next();
+        
+        setTimeout(() => {
+            this.playbackPaused.next();
+        }, 300);
 
         if (this.currentTrack != undefined) {
             this.logger.info(`Pausing '${this.currentTrack.path}'`, 'PlaybackService', 'pause');
@@ -280,7 +290,15 @@ export class PlaybackService implements PlaybackServiceBase {
             const firstTrack: TrackModel | undefined = this.queue.getFirstTrack();
 
             if (firstTrack != undefined) {
-                this.play(this.queue.getFirstTrack()!, false);
+                if (this.isInitialLoad && this.lastKnownPosition > 0) {
+                    this.audioPlayer.skipToSeconds(this.lastKnownPosition);
+                }
+                this.audioPlayer.resume();
+                this._isPlaying = true;
+                this._canPause = true;
+                this._canResume = false;
+                this.progressUpdater.startUpdatingProgress();
+                this.playbackResumed.next();
                 return;
             }
 
@@ -374,6 +392,12 @@ export class PlaybackService implements PlaybackServiceBase {
     }
 
     private play(trackToPlay: TrackModel, isPlayingPreviousTrack: boolean): void {
+        if (this.isInitialLoad && this.currentTrack && trackToPlay.path === this.currentTrack.path) {
+            this.resume();
+            this.isInitialLoad = false;
+            return;
+        }
+
         this.audioPlayer.stop();
         this.audioPlayer.play(trackToPlay.path);
         this.currentTrack = trackToPlay;
@@ -384,6 +408,7 @@ export class PlaybackService implements PlaybackServiceBase {
         this.playbackStarted.next(new PlaybackStarted(trackToPlay, isPlayingPreviousTrack));
 
         this.logger.info(`Playing '${this.currentTrack.path}'`, 'PlaybackService', 'play');
+        this.isInitialLoad = false;
     }
 
     private stop(): void {
@@ -511,6 +536,8 @@ export class PlaybackService implements PlaybackServiceBase {
 
             await this.restoreQueueAsync();
         }
+
+        this.isInitialLoad = false;
     }
 
     public saveQueue(): void {
@@ -524,10 +551,35 @@ export class PlaybackService implements PlaybackServiceBase {
         this.queue.restoreTracks(info.tracks, info.playbackOrder);
 
         if (info.playingTrack) {
-            this.play(info.playingTrack, false);
-            this.pause();
-            this.skipToSeconds(info.progressSeconds);
+            this.currentTrack = info.playingTrack;
+            this.lastKnownPosition = info.progressSeconds;
+            this.audioPlayer.play(info.playingTrack.path);
+            this.audioPlayer.pause();
+            this.audioPlayer.skipToSeconds(this.lastKnownPosition);
             this.progressUpdater.startUpdatingProgress();
+            this._isPlaying = false;
+            this._canPause = false;
+            this._canResume = true;
         }
+    }
+
+    private smoothStop(): void {
+        const fadeDuration = 300; // 300ms fade out
+        const fadeSteps = 20; // Number of steps in the fade out
+        const volumeStep = this.audioPlayer.audio.volume / fadeSteps;
+        let currentStep = 0;
+
+        const fadeInterval = setInterval(() => {
+            currentStep++;
+            const newVolume = this.audioPlayer.audio.volume - volumeStep;
+
+            if (currentStep >= fadeSteps || newVolume <= 0) {
+                clearInterval(fadeInterval);
+                this.audioPlayer.stop();
+                this.electronService.ipcRenderer.send('closing-tasks-performed');
+            } else {
+                this.audioPlayer.audio.volume = newVolume;
+            }
+        }, fadeDuration / fadeSteps);
     }
 }

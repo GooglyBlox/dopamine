@@ -9,12 +9,16 @@ import { AudioPlayerBase } from './audio-player.base';
 @Injectable()
 export class AudioPlayer implements AudioPlayerBase {
     private _audio: HTMLAudioElement;
+    private fadeOutInterval: number | null = null;
+    private isInitialLoad: boolean = true;
 
     public constructor(
         private mathExtensions: MathExtensions,
         private logger: Logger,
     ) {
         this._audio = new Audio();
+
+        this._audio.autoplay = false;
 
         try {
             // This fails during unit tests because setSinkId() does not exist on HTMLAudioElement
@@ -61,7 +65,13 @@ export class AudioPlayer implements AudioPlayerBase {
     public play(audioFilePath: string): void {
         const playableAudioFilePath: string = this.replaceUnplayableCharacters(audioFilePath);
         this.audio.src = 'file:///' + playableAudioFilePath;
-        PromiseUtils.noAwait(this.audio.play());
+        
+        if (this.isInitialLoad) {
+            this.isInitialLoad = false;
+            this.audio.pause();
+        } else {
+            PromiseUtils.noAwait(this.audio.play());
+        }
     }
 
     public stop(): void {
@@ -70,7 +80,7 @@ export class AudioPlayer implements AudioPlayerBase {
     }
 
     public pause(): void {
-        this.audio.pause();
+        this.smoothPause();
     }
 
     public resume(): void {
@@ -100,5 +110,34 @@ export class AudioPlayer implements AudioPlayerBase {
         let playableAudioFilePath: string = StringUtils.replaceAll(audioFilePath, '#', '%23');
         playableAudioFilePath = StringUtils.replaceAll(playableAudioFilePath, '?', '%3F');
         return playableAudioFilePath;
+    }
+
+    private smoothPause(): void {
+        const fadeDuration = 300; // 300ms fade out
+        const fadeSteps = 20; // Number of steps in the fade out
+        const volumeStep = this.audio.volume / fadeSteps;
+        let currentStep = 0;
+
+        // Clear existing interval if it exists
+        if (this.fadeOutInterval !== null) {
+            clearInterval(this.fadeOutInterval);
+        }
+
+        this.fadeOutInterval = window.setInterval(() => {
+            currentStep++;
+            const newVolume = this.audio.volume - volumeStep;
+
+            if (currentStep >= fadeSteps || newVolume <= 0) {
+                // Ensure the interval is not null before clearing
+                if (this.fadeOutInterval !== null) {
+                    clearInterval(this.fadeOutInterval);
+                    this.fadeOutInterval = null;
+                }
+                this.audio.pause();
+                this.audio.volume = 1; // Reset volume for next play
+            } else {
+                this.audio.volume = newVolume;
+            }
+        }, fadeDuration / fadeSteps);
     }
 }
