@@ -115,26 +115,25 @@ export class AudioPlayer implements AudioPlayerBase {
     private smoothPause(): void {
         const fadeDuration = 300; // 300ms fade out
         const fadeSteps = 20; // Number of steps in the fade out
-        const volumeStep = this.audio.volume / fadeSteps;
+        const initialVolume = this.audio.volume;
+        const volumeStep = initialVolume / fadeSteps;
         let currentStep = 0;
 
-        // Clear existing interval if it exists
         if (this.fadeOutInterval !== null) {
             clearInterval(this.fadeOutInterval);
         }
 
         this.fadeOutInterval = window.setInterval(() => {
             currentStep++;
-            const newVolume = this.audio.volume - volumeStep;
+            const newVolume = initialVolume - (volumeStep * currentStep);
 
             if (currentStep >= fadeSteps || newVolume <= 0) {
-                // Ensure the interval is not null before clearing
                 if (this.fadeOutInterval !== null) {
                     clearInterval(this.fadeOutInterval);
                     this.fadeOutInterval = null;
                 }
                 this.audio.pause();
-                this.audio.volume = 1; // Reset volume for next play
+                this.audio.volume = initialVolume; // Reset volume to initial value
             } else {
                 this.audio.volume = newVolume;
             }
