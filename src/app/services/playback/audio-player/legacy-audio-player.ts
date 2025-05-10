@@ -108,7 +108,27 @@ export class LegacyAudioPlayer implements IAudioPlayer {
 
     public pause(): void {
         this._isPaused = true;
-        this._audio.pause();
+        
+        if (!isNaN(this._audio.currentTime) && this._audio.currentTime > 0 && !this._audio.paused) {
+            const originalVolume = this._audio.volume;
+            const fadeOutDuration = 300; // ms
+            const stepDuration = fadeOutDuration / 20;
+            const volumeStep = originalVolume / 20;
+            
+            let currentStep = 0;
+            const fadeInterval = setInterval(() => {
+                currentStep++;
+                if (currentStep >= 20) {
+                    clearInterval(fadeInterval);
+                    this._audio.pause();
+                    this._audio.volume = originalVolume;
+                } else {
+                    this._audio.volume = originalVolume - (volumeStep * currentStep);
+                }
+            }, stepDuration);
+        } else {
+            this._audio.pause();
+        }
     }
 
     public resume(): void {
