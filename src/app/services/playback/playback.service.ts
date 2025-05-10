@@ -397,7 +397,7 @@ export class PlaybackService {
         this._canPause = true;
         this._canResume = false;
 
-        this.mediaSessionService.setMetadataAsync(trackToPlay);
+        void this.mediaSessionService.setMetadataAsync(trackToPlay);
 
         this.startUpdatingProgress();
         this.playbackStarted.next(new PlaybackStarted(trackToPlay, isPlayingPreviousTrack));
@@ -410,7 +410,7 @@ export class PlaybackService {
     private preloadNextTrackAfterDelay(): void {
         const nextTrack: TrackModel | undefined = this.queue.getNextTrack(this.currentTrack, this.loopMode === LoopMode.All);
 
-        if (nextTrack) {
+        if (nextTrack !== undefined) {
             if (this._preloadTimeoutId) {
                 clearTimeout(this._preloadTimeoutId);
             }
@@ -612,6 +612,12 @@ export class PlaybackService {
         if (this._shouldReportProgress) {
             this._progress = this.getCurrentProgress();
             this.progressChanged.next(this._progress);
+            
+            this.mediaSessionService.updatePlaybackPosition(
+                this._progress.totalSeconds,
+                this._progress.progressSeconds,
+                1.0
+            );
         }
     }
 

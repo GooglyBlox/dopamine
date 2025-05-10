@@ -39,4 +39,8 @@ export class MediaSessionService {
             playbackInformation.imageUrl,
         );
     }
+    
+    public updatePlaybackPosition(durationSeconds: number, positionSeconds: number, playbackRate: number = 1): void {
+        this.mediaSessionProxy.setPositionState(durationSeconds, positionSeconds, playbackRate);
+    }
 }

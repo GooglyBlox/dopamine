@@ -26,4 +26,20 @@ export class MediaSessionProxy {
     public clearMetadata(): void {
         window.navigator.mediaSession.metadata = null;
     }
+    
+    public setPositionState(duration: number, position: number, playbackRate: number = 1): void {
+        if (typeof window.navigator.mediaSession.setPositionState === 'function') {
+            // Ensure position is never greater than duration
+            // If duration is 0 or invalid, don't set position state
+            if (duration > 0) {
+                const validPosition = Math.min(position, duration);
+                
+                window.navigator.mediaSession.setPositionState({
+                    duration: duration,
+                    position: validPosition,
+                    playbackRate: playbackRate
+                });
+            }
+        }
+    }
 }
