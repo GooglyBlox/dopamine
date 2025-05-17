@@ -135,7 +135,7 @@ function getTrayIcon(): string {
     if (isWindows()) {
         if (!invertColor) {
             // Defaulting to black for Windows
-            return path.join(globalAny.__static, 'icons/tray_black.ico');
+            return path.join(globalAny.__static, 'icons/tray_white.ico');
         } else {
             return path.join(globalAny.__static, 'icons/tray_white.ico');
         }
