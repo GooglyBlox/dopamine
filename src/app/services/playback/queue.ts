@@ -7,6 +7,7 @@ import { TrackModel } from '../track/track-model';
 export class Queue {
     private _tracks: TrackModel[] = [];
     private playbackOrder: number[] = [];
+    private currentPlayingIndex: number = -1;
 
     public constructor(
         private shuffler: Shuffler,
@@ -33,6 +34,7 @@ export class Queue {
 
     public setTracks(tracksToSet: TrackModel[], shuffle: boolean): TrackModel[] {
         this._tracks = tracksToSet.map((x) => x.clone());
+        this.currentPlayingIndex = -1;
 
         if (shuffle) {
             this.shuffle();
@@ -45,18 +47,39 @@ export class Queue {
         return this._tracks;
     }
 
-    public addTracks(tracksToAdd: TrackModel[]): void {
-        for (const trackToAdd of tracksToAdd) {
-            this._tracks.push(trackToAdd.clone());
-            this.playbackOrder.push(this._tracks.length - 1);
+    public addTracks(tracksToAdd: TrackModel[], currentTrack?: TrackModel): void {
+        if (currentTrack && this._tracks.includes(currentTrack)) {
+            const currentPlaybackOrderIndex = this.getPlaybackOrderIndex(currentTrack);
+            this.currentPlayingIndex = currentPlaybackOrderIndex;
+            
+            const startInsertPosition = this._tracks.length;
+            
+            for (const trackToAdd of tracksToAdd) {
+                this._tracks.push(trackToAdd.clone());
+            }
+            
+            const newIndices: number[] = [];
+            for (let i = 0; i < tracksToAdd.length; i++) {
+                newIndices.push(startInsertPosition + i);
+            }
+            
+            this.playbackOrder.splice(currentPlaybackOrderIndex + 1, 0, ...newIndices);
+            
+            this.logger.info(`Added '${tracksToAdd?.length}' tracks after current track`, 'Queue', 'addTracks');
+        } else {
+            for (const trackToAdd of tracksToAdd) {
+                this._tracks.push(trackToAdd.clone());
+                this.playbackOrder.push(this._tracks.length - 1);
+            }
+            
+            this.logger.info(`Added '${tracksToAdd?.length}' tracks to the end`, 'Queue', 'addTracks');
         }
-
-        this.logger.info(`Added '${tracksToAdd?.length}' tracks`, 'Queue', 'addTracks');
     }
 
     public restoreTracks(tracks: TrackModel[], playbackOrder: number[]): void {
         this._tracks = tracks;
         this.playbackOrder = playbackOrder;
+        this.currentPlayingIndex = -1;
 
         this.logger.info(`Restored '${tracks?.length}' tracks`, 'Queue', 'restoreTracks');
     }
@@ -118,6 +141,7 @@ export class Queue {
         }
 
         const currentIndex: number = this.getPlaybackOrderIndex(currentTrack);
+        this.currentPlayingIndex = currentIndex;
 
         if (currentIndex > minimumIndex) {
             return this._tracks[this.playbackOrder[currentIndex - 1]];
@@ -147,6 +171,7 @@ export class Queue {
         }
 
         const currentIndex: number = this.getPlaybackOrderIndex(currentTrack);
+        this.currentPlayingIndex = currentIndex;
 
         if (currentIndex < maximumIndex) {
             return this._tracks[this.playbackOrder[currentIndex + 1]];

@@ -180,7 +180,7 @@ export class PlaybackService {
             return;
         }
 
-        this.queue.addTracks(tracksToAdd);
+        this.queue.addTracks(tracksToAdd, this.currentTrack);
         await this.notifyOfTracksAddedToPlaybackQueueAsync(tracksToAdd.length);
     }
 
