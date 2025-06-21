@@ -3,6 +3,33 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-preview.39] - 2025-06-21
+
+### Added
+
+-   Added Ctrl-F shortcut to focus the search bar and ESC to clear it
+-   Added support for cover art images that have file name albumart.jpg, albumart.jpeg or albumart.png
+-   Added Turkish translation
+
+### Changed
+
+-   Slightly improved the look of the mini player
+-   Improved scaling of text on Now Playing screen for smaller screens
+-   Order selections are now menus instead of toggle buttons
+-   Updated the Brazilian Portuguese translation
+-   Updated the Spanish translation
+-   Updated the Turkish translation
+-   Updated the Vietnamese translation
+
+### Fixed
+
+-   Fixed an issue where a random song would start playing after the queue ended when using gapless playback.
+-   Fixed an issue where album lists were not refreshed after a search returned no results.
+-   Fixed an issue where progress was not reset to 0 when playback has finished
+-   Fixed an issue where a track that is longer than 4 minutes was scrobbled to Last.fm immediately after it started playing
+-   Fixed some sizing issues on the "Folders" screen
+-   Fixed search problems
+
 ## [3.0.0-preview.38] - 2025-05-29
 
 ### Added

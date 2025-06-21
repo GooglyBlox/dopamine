@@ -11,12 +11,11 @@ import { PlaybackStarted } from '../playback/playback-started';
 import { TrackModel } from '../track/track-model';
 
 import { SignInState } from './sign-in-state';
-import { ScrobblingServiceBase } from './scrobbling.service.base';
 import { PlaybackService } from '../playback/playback.service';
 import { SettingsBase } from '../../common/settings/settings.base';
 
-@Injectable()
-export class ScrobblingService implements ScrobblingServiceBase {
+@Injectable({ providedIn: 'root' })
+export class ScrobblingService {
     private _signInState: SignInState = SignInState.SignedOut;
 
     private sessionKey: string = '';
@@ -222,7 +221,7 @@ export class ScrobblingService implements ScrobblingServiceBase {
         // - The track must be longer than 30 seconds
         // - And the track has been played for at least half its duration, or for 4 minutes (whichever occurs earlier).
         if (playbackProgress.totalSeconds > 30) {
-            if (playbackProgress.progressSeconds >= playbackProgress.totalSeconds / 2 || playbackProgress.totalSeconds > 4 * 60) {
+            if (playbackProgress.progressSeconds >= playbackProgress.totalSeconds / 2 || playbackProgress.progressSeconds > 4 * 60) {
                 this.canScrobble = false;
 
                 try {

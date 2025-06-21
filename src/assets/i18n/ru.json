@@ -269,7 +269,7 @@
     "grouping": "Группировка",
     "albums-defined-by-folders-on-computer": "Определять альбомы папками на вашем компьютере",
     "albums-defined-by-tag-album-title": "Определять альбомы по тегу «Альбом»",
-    "albums-defined-by-tags-album-title-and-album-artist": "Определять альбомы по тегу «Альбом» и «Исполнитель альбома»",
+    "albums-defined-by-tags-album-title-and-album-artist": "Albums are defined by the 'Album' and 'Album Artist' tags (or 'Artist' if 'Album Artist' is not set)",
     "changing-will-trigger-album-cover-refresh": "Смена этого параметра приведёт к обновлению обложек ваших альбомов",
     "select-playlist-folder": "Пожалуйста, выберите папку с плейлистом",
     "follow-album-cover-color": "Наследовать цвет обложки альбома",
@@ -315,5 +315,7 @@
     "download-image-error": "An error occurred while downloading the image. Please check the log file if you need more information.",
     "Information": "Information",
     "no-image-found-online": "No image could be found online.",
-    "image": "Image"
+    "image": "Image",
+    "choose-order": "Choose an order",
+    "choose-type": "Choose a type"
 }

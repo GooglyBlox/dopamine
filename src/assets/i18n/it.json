@@ -269,7 +269,7 @@
     "grouping": "Classificazione",
     "albums-defined-by-folders-on-computer": "Gli album sono definiti dalle loro cartelle sul tuo computer",
     "albums-defined-by-tag-album-title": "Gli album sono definiti dal tag 'Album'",
-    "albums-defined-by-tags-album-title-and-album-artist": "Gli album sono definiti dai tag 'Album' e 'Artista Album'",
+    "albums-defined-by-tags-album-title-and-album-artist": "Albums are defined by the 'Album' and 'Album Artist' tags (or 'Artist' if 'Album Artist' is not set)",
     "changing-will-trigger-album-cover-refresh": "Cambiare questa opzione causerà un aggiornamento delle copertine dei tuoi album",
     "select-playlist-folder": "Seleziona una cartella playlist",
     "follow-album-cover-color": "Segui il colore della copertina dell'album",
@@ -315,5 +315,7 @@
     "download-image-error": "An error occurred while downloading the image. Please check the log file if you need more information.",
     "Information": "Information",
     "no-image-found-online": "No image could be found online.",
-    "image": "Image"
+    "image": "Image",
+    "choose-order": "Choose an order",
+    "choose-type": "Choose a type"
 }
