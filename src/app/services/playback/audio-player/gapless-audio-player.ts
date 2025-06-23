@@ -102,7 +102,7 @@ export class GaplessAudioPlayer implements IAudioPlayer {
         this._isPlaying = false;
 
         if (this._sourceNode) {
-            this._sourceNode.onended = () => {};
+            this._sourceNode.onended = null;
             this._sourceNode.stop();
             this._sourceNode.disconnect();
         }
@@ -119,18 +119,55 @@ export class GaplessAudioPlayer implements IAudioPlayer {
     }
 
     public pause(): void {
+        // Check the current state before setting isPaused
+        const shouldSmoothPause = !!this._sourceNode && this._isPlaying && !this._isPaused;
+        
         this._isPaused = true;
         this._audioPausedAt = this._audioContext.currentTime - this._audioStartTime;
 
-        if (this._sourceNode) {
-            this._sourceNode.onended = () => {};
-            this._sourceNode.stop();
-            this._sourceNode.disconnect();
+        if (shouldSmoothPause) {
+            // Smooth pause with fade out over 300ms
+            const originalGain = this._lastSetLogarithmicVolume;
+            const fadeOutDuration = 0.3; // 300ms in seconds for Web Audio API
+            const currentTime = this._audioContext.currentTime;
+            
+            // Create a smooth exponential fade out
+            this._gainNode.gain.cancelScheduledValues(currentTime);
+            this._gainNode.gain.setValueAtTime(originalGain, currentTime);
+            this._gainNode.gain.exponentialRampToValueAtTime(0.001, currentTime + fadeOutDuration);
+            
+            // Stop the audio after the fade completes
+            setTimeout(() => {
+                if (this._sourceNode && this._isPaused) {
+                    this._sourceNode.onended = null;
+                    this._sourceNode.stop();
+                    this._sourceNode.disconnect();
+                }
+                
+                this._audio.pause();
+                
+                // Only restore gain if still paused (prevents race condition with resume/volume changes)
+                if (this._isPaused) {
+                    this._gainNode.gain.cancelScheduledValues(this._audioContext.currentTime);
+                    this._gainNode.gain.setValueAtTime(this._lastSetLogarithmicVolume, this._audioContext.currentTime);
+                }
+            }, fadeOutDuration * 1000);
+        } else {
+            // Immediate pause if not playing or already paused
+            if (this._sourceNode) {
+                this._sourceNode.onended = null;
+                this._sourceNode.stop();
+                this._sourceNode.disconnect();
+            }
+            
+            this._audio.pause();
         }
-
-        this._audio.pause();
     }
     public resume(): void {
+        // Cancel any scheduled gain changes from the pause fade and ensure correct volume
+        this._gainNode.gain.cancelScheduledValues(this._audioContext.currentTime);
+        this._gainNode.gain.setValueAtTime(this._lastSetLogarithmicVolume, this._audioContext.currentTime);
+        
         this.playWebAudio(this._audioPausedAt);
         this._audio.play();
         this._isPaused = false;
@@ -172,7 +209,7 @@ export class GaplessAudioPlayer implements IAudioPlayer {
         try {
             // Make sure to stop any previous sourceNode if it's still playing
             if (this._sourceNode) {
-                this._sourceNode.onended = () => {};
+                this._sourceNode.onended = null;
 
                 this._sourceNode.stop();
                 this._sourceNode.disconnect(); // Disconnect the previous node to avoid issues
