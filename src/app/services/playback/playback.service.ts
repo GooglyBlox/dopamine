@@ -408,6 +408,11 @@ export class PlaybackService {
     }
 
     private preloadNextTrackAfterDelay(): void {
+        // Don't preload when in single track loop mode to allow proper looping
+        if (this.loopMode === LoopMode.One) {
+            return;
+        }
+
         const nextTrack: TrackModel | undefined = this.queue.getNextTrack(this.currentTrack, this.loopMode === LoopMode.All);
 
         if (nextTrack !== undefined) {
