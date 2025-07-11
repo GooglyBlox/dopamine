@@ -10,6 +10,7 @@ import { PlaylistModel } from '../playlist/playlist-model';
 import { TrackModel } from '../track/track-model';
 import { TrackModels } from '../track/track-models';
 import { LoopMode } from './loop-mode';
+import { LoopPoints, DefaultLoopPoints } from './loop-points';
 import { PlaybackProgress } from './playback-progress';
 import { PlaybackStarted } from './playback-started';
 import { Queue } from './queue';
@@ -46,6 +47,7 @@ export class PlaybackService {
     private subscription: Subscription = new Subscription();
     private _audioPlayer: IAudioPlayer;
     private _preloadTimeoutId: NodeJS.Timeout | number | undefined;
+    private _loopPoints: LoopPoints = DefaultLoopPoints.createDisabled();
 
     public constructor(
         private audioPlayerFactory: AudioPlayerFactory,
@@ -112,6 +114,10 @@ export class PlaybackService {
 
     public get canResume(): boolean {
         return this._canResume;
+    }
+
+    public get loopPoints(): LoopPoints {
+        return this._loopPoints;
     }
 
     public currentTrack: TrackModel | undefined;
@@ -379,6 +385,28 @@ export class PlaybackService {
         }
     }
 
+    public setLoopPoints(startSeconds: number, endSeconds: number): void {
+        this._loopPoints = new DefaultLoopPoints(startSeconds, endSeconds, true);
+        this.logger.info(`Loop points set: ${startSeconds}s - ${endSeconds}s`, 'PlaybackService', 'setLoopPoints');
+    }
+
+    public clearLoopPoints(): void {
+        this._loopPoints = DefaultLoopPoints.createDisabled();
+        this.logger.info('Loop points cleared', 'PlaybackService', 'clearLoopPoints');
+    }
+
+    public setLoopStartPoint(): void {
+        const currentSeconds = this.audioPlayer.progressSeconds;
+        this._loopPoints = new DefaultLoopPoints(currentSeconds, this._loopPoints.endSeconds, this._loopPoints.isEnabled);
+        this.logger.info(`Loop start point set: ${currentSeconds}s`, 'PlaybackService', 'setLoopStartPoint');
+    }
+
+    public setLoopEndPoint(): void {
+        const currentSeconds = this.audioPlayer.progressSeconds;
+        this._loopPoints = new DefaultLoopPoints(this._loopPoints.startSeconds, currentSeconds, this._loopPoints.isEnabled);
+        this.logger.info(`Loop end point set: ${currentSeconds}s`, 'PlaybackService', 'setLoopEndPoint');
+    }
+
     private stopAndPlay(trackToPlay: TrackModel, isPlayingPreviousTrack: boolean): void {
         this.audioPlayer.stop();
         this.logger.info(`Stopping '${this.currentTrack?.path ?? ''}'`, 'PlaybackService', 'stopAndPlay');
@@ -396,6 +424,11 @@ export class PlaybackService {
         this._isPlaying = true;
         this._canPause = true;
         this._canResume = false;
+
+        // Initialize default loop points for the track if not set
+        if (!this._loopPoints.isEnabled) {
+            this._loopPoints = DefaultLoopPoints.createFromTrack(this.audioPlayer.totalSeconds);
+        }
 
         void this.mediaSessionService.setMetadataAsync(trackToPlay);
 
@@ -616,6 +649,19 @@ export class PlaybackService {
     private reportProgress(): void {
         if (this._shouldReportProgress) {
             this._progress = this.getCurrentProgress();
+            
+            // Check loop points when in single track loop mode
+            if (this.loopMode === LoopMode.One && this._loopPoints.isEnabled && this.currentTrack) {
+                const currentSeconds = this._progress.progressSeconds;
+                
+                // If we've reached or passed the loop end point, jump back to start
+                if (currentSeconds >= this._loopPoints.endSeconds) {
+                    this.audioPlayer.skipToSeconds(this._loopPoints.startSeconds);
+                    this._progress = this.getCurrentProgress();
+                    this.logger.info(`Loop point reached, jumping from ${currentSeconds}s to ${this._loopPoints.startSeconds}s`, 'PlaybackService', 'reportProgress');
+                }
+            }
+            
             this.progressChanged.next(this._progress);
             
             this.mediaSessionService.updatePlaybackPosition(

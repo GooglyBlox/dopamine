@@ -3,9 +3,30 @@
     (mouseenter)="progressContainerMouseEnter()"
     (mouseleave)="progressContainerMouseLeave()"
     (mousedown)="progressContainerMouseDown($event)"
+    (contextmenu)="onProgressRightClick($event)"
 >
     <div class="app-playback-progress-track" #progressTrack></div>
     <div class="app-playback-progress-bar" #progressBar [ngStyle]="{ width: this.progressBarPosition + 'px' }"></div>
+    
+    <!-- Loop point markers -->
+    <div
+        class="app-playback-progress-loop-start"
+        *ngIf="showLoopPoints"
+        [ngStyle]="{ left: loopStartPosition + 'px' }"
+        matTooltip="Loop start: {{ loopStartTime | formatPlaybackTime }}"
+    ></div>
+    <div
+        class="app-playback-progress-loop-end"
+        *ngIf="showLoopPoints"
+        [ngStyle]="{ left: loopEndPosition + 'px' }"
+        matTooltip="Loop end: {{ loopEndTime | formatPlaybackTime }}"
+    ></div>
+    <div
+        class="app-playback-progress-loop-region"
+        *ngIf="showLoopPoints"
+        [ngStyle]="{ left: loopStartPosition + 'px', width: (loopEndPosition - loopStartPosition) + 'px' }"
+    ></div>
+    
     <div
         class="app-playback-progress-thumb"
         #progressThumb
@@ -14,3 +35,28 @@
         (mousedown)="progressThumbMouseDown()"
     ></div>
 </div>
+
+<!-- Loop points context menu -->
+<div
+    #loopPointsMenuAnchor
+    style="visibility: hidden; position: fixed"
+    [style.left]="contextMenuPosition.x + 'px'"
+    [style.top]="contextMenuPosition.y + 'px'"
+    [matMenuTriggerFor]="loopPointsMenu"
+></div>
+
+<mat-menu #loopPointsMenu="matMenu">
+    <button mat-menu-item (click)="setLoopStartHere()" [disabled]="!playbackService.isPlaying">
+        <i class="las la-play"></i>
+        <span>Set loop start here</span>
+    </button>
+    <button mat-menu-item (click)="setLoopEndHere()" [disabled]="!playbackService.isPlaying">
+        <i class="las la-stop"></i>
+        <span>Set loop end here</span>
+    </button>
+    <mat-divider *ngIf="playbackService.loopPoints.isEnabled"></mat-divider>
+    <button mat-menu-item (click)="clearLoopPoints()" *ngIf="playbackService.loopPoints.isEnabled">
+        <i class="las la-times"></i>
+        <span>Clear loop points</span>
+    </button>
+</mat-menu>

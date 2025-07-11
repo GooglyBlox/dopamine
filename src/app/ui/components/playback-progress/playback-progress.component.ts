@@ -1,10 +1,12 @@
 import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { MatMenuTrigger } from '@angular/material/menu';
 import { Subscription } from 'rxjs';
 import { Logger } from '../../../common/logger';
 import { MathExtensions } from '../../../common/math-extensions';
 import { NativeElementProxy } from '../../../common/native-element-proxy';
 import { PlaybackProgress } from '../../../services/playback/playback-progress';
 import { PlaybackService } from '../../../services/playback/playback.service';
+import { LoopMode } from '../../../services/playback/loop-mode';
 
 @Component({
     selector: 'app-playback-progress',
@@ -18,10 +20,14 @@ export class PlaybackProgressComponent implements OnInit, OnDestroy, AfterViewIn
 
     @ViewChild('progressTrack')
     public progressTrack: ElementRef;
+    
+    @ViewChild('loopPointsMenuAnchor', { read: MatMenuTrigger })
+    public loopPointsMenuTrigger: MatMenuTrigger;
+    
     private progressMargin: number = 6;
 
     public constructor(
-        private playbackService: PlaybackService,
+        public playbackService: PlaybackService,
         private mathExtensions: MathExtensions,
         private nativeElementProxy: NativeElementProxy,
         private logger: Logger,
@@ -36,8 +42,20 @@ export class PlaybackProgressComponent implements OnInit, OnDestroy, AfterViewIn
     public isProgressDragged: boolean = false;
     public isProgressContainerDown: boolean = false;
 
+    // Loop points properties
+    public loopStartPosition: number = 0;
+    public loopEndPosition: number = 0;
+    public loopStartTime: number = 0;
+    public loopEndTime: number = 0;
+    public contextMenuPosition = { x: 0, y: 0 };
+    private lastRightClickPosition: number = 0;
+
     public ngOnDestroy(): void {
         this.subscription.unsubscribe();
+    }
+
+    public get showLoopPoints(): boolean {
+        return this.playbackService.loopMode === LoopMode.One && this.playbackService.loopPoints.isEnabled;
     }
 
     public ngOnInit(): void {
@@ -131,6 +149,9 @@ export class PlaybackProgressComponent implements OnInit, OnDestroy, AfterViewIn
                 0,
                 progressTrackWidth - 2 * this.progressMargin,
             );
+
+            // Update loop point positions
+            this.updateLoopPointPositions(progressTrackWidth, playbackProgress.totalSeconds);
         } catch (e: unknown) {
             this.logger.error(e, 'Could not apply playback progress', 'PlaybackProgressComponent', 'applyPlaybackProgress');
         }
@@ -149,5 +170,62 @@ export class PlaybackProgressComponent implements OnInit, OnDestroy, AfterViewIn
         } catch (e: unknown) {
             this.logger.error(e, 'Could not apply mouse progress', 'PlaybackProgressComponent', 'applyMouseProgress');
         }
+    }
+
+    private updateLoopPointPositions(progressTrackWidth: number, totalSeconds: number): void {
+        if (this.showLoopPoints && totalSeconds > 0) {
+            const loopPoints = this.playbackService.loopPoints;
+            this.loopStartTime = loopPoints.startSeconds;
+            this.loopEndTime = loopPoints.endSeconds;
+            this.loopStartPosition = (loopPoints.startSeconds / totalSeconds) * progressTrackWidth;
+            this.loopEndPosition = (loopPoints.endSeconds / totalSeconds) * progressTrackWidth;
+        }
+    }
+
+    public onProgressRightClick(event: MouseEvent): void {
+        event.preventDefault();
+        if (!this.playbackService.isPlaying) {
+            return;
+        }
+
+        try {
+            const progressTrackWidth: number = this.nativeElementProxy.getElementWidth(this.progressTrack);
+            const trackElement = this.progressTrack.nativeElement as HTMLElement;
+            const trackRect = trackElement.getBoundingClientRect();
+            this.lastRightClickPosition = event.clientX - trackRect.left;
+            
+            this.contextMenuPosition = { x: event.clientX, y: event.clientY };
+            this.loopPointsMenuTrigger.openMenu();
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not handle right click', 'PlaybackProgressComponent', 'onProgressRightClick');
+        }
+    }
+
+    public setLoopStartHere(): void {
+        try {
+            const progressTrackWidth: number = this.nativeElementProxy.getElementWidth(this.progressTrack);
+            const totalSeconds = this.playbackService.progress.totalSeconds;
+            const clickedSeconds = (this.lastRightClickPosition / progressTrackWidth) * totalSeconds;
+            
+            this.playbackService.setLoopPoints(clickedSeconds, this.playbackService.loopPoints.endSeconds);
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not set loop start', 'PlaybackProgressComponent', 'setLoopStartHere');
+        }
+    }
+
+    public setLoopEndHere(): void {
+        try {
+            const progressTrackWidth: number = this.nativeElementProxy.getElementWidth(this.progressTrack);
+            const totalSeconds = this.playbackService.progress.totalSeconds;
+            const clickedSeconds = (this.lastRightClickPosition / progressTrackWidth) * totalSeconds;
+            
+            this.playbackService.setLoopPoints(this.playbackService.loopPoints.startSeconds, clickedSeconds);
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not set loop end', 'PlaybackProgressComponent', 'setLoopEndHere');
+        }
+    }
+
+    public clearLoopPoints(): void {
+        this.playbackService.clearLoopPoints();
     }
 }
