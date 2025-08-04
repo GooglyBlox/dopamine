@@ -6,7 +6,7 @@ export class Constants {
 
     public static readonly languages: Language[] = [
         new Language('ar', 'Arabic', 'العربية', true),
-        new Language('bg', 'Bulgarian', 'български', true),
+        new Language('bg', 'Bulgarian', 'Български', true),
         new Language('cs', 'Czech', 'Čeština', false),
         new Language('de', 'German', 'Deutsch', false),
         new Language('el', 'Greek', 'Ελληνικά', true),
@@ -14,6 +14,7 @@ export class Constants {
         new Language('es', 'Spanish', 'Español', false),
         new Language('fa', 'Farsi', 'فارسی', true),
         new Language('fr', 'French', 'Français', false),
+        new Language('he', 'Hebrew', 'עברית', true),
         new Language('hr', 'Croatian', 'Hrvatski', false),
         new Language('it', 'Italian', 'Italiano', false),
         new Language('nl', 'Dutch', 'Nederlands', false),
@@ -22,7 +23,7 @@ export class Constants {
         new Language('ja-JP', 'Japanese', '日本語', true),
         new Language('ko', 'Korean', '한국어', true),
         new Language('ku', 'Kurdish', 'Kurdî', false),
-        new Language('ru', 'Russian', 'русский', true),
+        new Language('ru', 'Russian', 'Русский', true),
         new Language('sv', 'Swedish', 'Svenska', false),
         new Language('tr', 'Turkish', 'Türkçe', false),
         new Language('vi', 'Vietnamese', 'Tiếng Việt', false),
@@ -107,6 +108,10 @@ export class Constants {
     public static emptyImage: string = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
     public static readonly removablePrefixes: string[] = ['the', 'le', 'les', 'a', 'and'];
+
+    public static readonly unknownArtist: string = 'unknown-artist';
+    public static readonly unknownGenre: string = 'unknown-genre';
+    public static readonly unknownTitle: string = 'unknown-title';
 
     public static readonly externalComponents: ExternalComponent[] = [
         new ExternalComponent(
