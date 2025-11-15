@@ -1,5 +1,5 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { Component, Input, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewEncapsulation } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { PromiseUtils } from '../../../common/utils/promise-utils';
 import { PlaybackInformation } from '../../../services/playback-information/playback-information';
@@ -77,6 +77,9 @@ export class PlaybackInformationComponent implements OnInit, OnDestroy {
 
     @Input()
     public smallFontSize: number = 0;
+
+    @Output()
+    public trackTitleClicked: EventEmitter<TrackModel> = new EventEmitter<TrackModel>();
 
     public contentAnimation: string = 'down';
 
@@ -264,6 +267,12 @@ export class PlaybackInformationComponent implements OnInit, OnDestroy {
             await this.scheduler.sleepAsync(Constants.playbackInfoSwitchAnimationMilliseconds);
         } else {
             this.contentAnimation = 'down';
+        }
+    }
+
+    public onTrackTitleClicked(): void {
+        if (this.currentTrack != undefined) {
+            this.trackTitleClicked.emit(this.currentTrack);
         }
     }
 }

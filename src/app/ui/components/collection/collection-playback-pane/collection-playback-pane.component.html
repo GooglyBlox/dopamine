@@ -17,6 +17,7 @@
                 position="center"
                 [showRating]="this.settings.showRating"
                 [showLove]="this.settings.showLove"
+                (trackTitleClicked)="onTrackTitleClicked($event)"
             ></app-playback-information>
         </div>
         <div class="app-collection-playback-pane-controls__center">
