@@ -1,6 +1,7 @@
 export abstract class SettingsBase {
     public abstract get defaultLanguage(): string;
     public abstract get albumKeyIndex(): string;
+    public abstract initializeAsync(): Promise<void>;
     public abstract language: string;
     public abstract checkForUpdates: boolean;
     public abstract checkForUpdatesIncludesPreReleases: boolean;
@@ -28,6 +29,7 @@ export abstract class SettingsBase {
     public abstract selectedCollectionPage: number;
     public abstract foldersTabOpenedFolder: string;
     public abstract foldersTabOpenedSubfolder: string;
+    public abstract foldersTabSelectedTrackOrder: string;
     public abstract albumsTabSelectedAlbum: string;
     public abstract albumsTabSelectedAlbumOrder: string;
     public abstract albumsTabSelectedTrackOrder: string;
@@ -84,4 +86,7 @@ export abstract class SettingsBase {
     public abstract fullPlayerPositionSizeMaximized: string;
     public abstract coverPlayerPosition: string;
     public abstract useGaplessPlayback: boolean;
+    public abstract jumpToPlayingSong: boolean;
+    public abstract showSquareImages: boolean;
+    public abstract useCompactYearView: boolean;
 }

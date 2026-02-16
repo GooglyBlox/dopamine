@@ -3,6 +3,9 @@ import { SettingsBase } from '../common/settings/settings.base';
 export class SettingsMock implements SettingsBase {
     public albumKeyIndexMock: string = '';
 
+    public async initializeAsync(): Promise<void> {
+        return Promise.resolve();
+    }
     public albumsDefinedByFolders: boolean;
     public albumsDefinedByTitle: boolean;
     public albumsDefinedByTitleAndArtist: boolean;
@@ -31,6 +34,7 @@ export class SettingsMock implements SettingsBase {
     public foldersLeftPaneWidthPercent: number;
     public foldersTabOpenedFolder: string;
     public foldersTabOpenedSubfolder: string;
+    public foldersTabSelectedTrackOrder: string;
     public followSystemColor: boolean;
     public followAlbumCoverColor: boolean;
     public followSystemTheme: boolean;
@@ -86,6 +90,9 @@ export class SettingsMock implements SettingsBase {
     public fullPlayerPositionSizeMaximized: string;
     public coverPlayerPosition: string;
     public useGaplessPlayback: boolean;
+    public jumpToPlayingSong: boolean;
+    public showSquareImages: boolean;
+    public useCompactYearView: boolean;
 
     public get albumKeyIndex(): string {
         return this.albumKeyIndexMock;

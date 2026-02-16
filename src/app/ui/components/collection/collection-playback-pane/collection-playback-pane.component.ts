@@ -55,11 +55,11 @@ export class CollectionPlaybackPaneComponent {
 
         // Get artists for this track based on the current artist type
         const allArtists = this.artistService.getArtists(selectedArtistType);
-        
+
         // Find artists that have this track
         const trackArtistNames = track.artists ? track.artists.split(/[;,]/).map(a => a.trim()) : [];
-        const matchingArtists = allArtists.filter(artist => 
-            trackArtistNames.some(trackArtistName => 
+        const matchingArtists = allArtists.filter(artist =>
+            trackArtistNames.some(trackArtistName =>
                 artist.displayName.toLowerCase().includes(trackArtistName.toLowerCase()) ||
                 trackArtistName.toLowerCase().includes(artist.displayName.toLowerCase())
             )
@@ -79,5 +79,9 @@ export class CollectionPlaybackPaneComponent {
             // This will trigger the tracks to be loaded for this album
             this.artistsAlbumsPersister.setSelectedAlbums([matchingAlbum]);
         }
+    }
+
+    public async showHighlightsAsync(): Promise<void> {
+        await this.navigationService.navigateToHighlightsAsync();
     }
 }

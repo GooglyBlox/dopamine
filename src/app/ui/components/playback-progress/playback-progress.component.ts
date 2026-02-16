@@ -100,7 +100,7 @@ export class PlaybackProgressComponent implements OnInit, OnDestroy, AfterViewIn
     }
 
     @HostListener('document:mouseup')
-    public onMouseUp(): void {
+    public async onMouseUp(): Promise<void> {
         this.isProgressThumbDown = false;
         this.showProgressThumb = false;
 
@@ -113,7 +113,7 @@ export class PlaybackProgressComponent implements OnInit, OnDestroy, AfterViewIn
             this.isProgressContainerDown = false;
             try {
                 const progressTrackWidth: number = this.nativeElementProxy.getElementWidth(this.progressTrack);
-                this.playbackService.skipByFractionOfTotalSeconds(this.progressBarPosition / progressTrackWidth);
+                await this.playbackService.skipByFractionOfTotalSecondsAsync(this.progressBarPosition / progressTrackWidth);
             } catch (e: unknown) {
                 this.logger.error(e, 'Could not skip by fraction of total seconds', 'PlaybackProgressComponent', 'onMouseUp');
             }

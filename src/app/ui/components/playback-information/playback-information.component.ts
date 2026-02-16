@@ -1,7 +1,6 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewEncapsulation } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { PromiseUtils } from '../../../common/utils/promise-utils';
 import { PlaybackInformation } from '../../../services/playback-information/playback-information';
 import { TrackModel } from '../../../services/track/track-model';
 import { MetadataService } from '../../../services/metadata/metadata.service';
@@ -173,19 +172,23 @@ export class PlaybackInformationComponent implements OnInit, OnDestroy {
 
         this.subscription.add(
             this.playbackInformationService.playingNextTrack$.subscribe((playbackInformation: PlaybackInformation) => {
-                PromiseUtils.noAwait(this.switchUp(playbackInformation.track));
+                void this.switchUp(playbackInformation.track);
             }),
         );
 
         this.subscription.add(
             this.playbackInformationService.playingPreviousTrack$.subscribe((playbackInformation: PlaybackInformation) => {
-                PromiseUtils.noAwait(this.switchDown(playbackInformation.track, true));
+                void this.switchDown(playbackInformation.track, true);
             }),
         );
 
         this.subscription.add(
             this.playbackInformationService.playingNoTrack$.subscribe((playbackInformation: PlaybackInformation) => {
-                PromiseUtils.noAwait(this.switchUp(playbackInformation.track));
+                // Without this delay, the previous track’s information might remain visible
+                // if the next track fails to play before its animation completes.
+                setTimeout(() => {
+                    void this.switchUp(playbackInformation.track);
+                }, 150);
             }),
         );
 
@@ -202,12 +205,15 @@ export class PlaybackInformationComponent implements OnInit, OnDestroy {
         );
 
         this.subscription.add(
-            this.indexingService.indexingFinished$.subscribe(async (_) => {
-                const currentPlaybackInformation: PlaybackInformation =
-                    await this.playbackInformationService.getCurrentPlaybackInformationAsync();
-                await this.switchDown(currentPlaybackInformation.track, false);
+            this.indexingService.indexingFinished$.subscribe(() => {
+                void this.switchToCurrentPlaybackInformation();
             }),
         );
+    }
+
+    private async switchToCurrentPlaybackInformation(): Promise<void> {
+        const currentPlaybackInformation: PlaybackInformation = await this.playbackInformationService.getCurrentPlaybackInformationAsync();
+        await this.switchDown(currentPlaybackInformation.track, false);
     }
 
     private setRating(track: TrackModel): void {

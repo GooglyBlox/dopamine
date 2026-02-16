@@ -228,8 +228,6 @@ import { NavigationServiceBase } from './services/navigation/navigation.service.
 import { ApplicationServiceBase } from './services/application/application.service.base';
 import { AZLyricsApi } from './common/api/lyrics/a-z-lyrics.api';
 import { ChartLyricsApi } from './common/api/lyrics/chart-lyrics.api';
-import { WebSearchLyricsApi } from './common/api/lyrics/web-search-lyrics/web-search-lyrics.api';
-import { WebSearchApi } from './common/api/lyrics/web-search-lyrics/web-search.api';
 import { ArtistsFilterPipe } from './ui/pipes/artists-filter.pipe';
 import { TrackRepositoryBase } from './data/repositories/track-repository.base';
 import { FolderRepositoryBase } from './data/repositories/folder-repository.base';
@@ -295,6 +293,8 @@ import { VolumeIconComponent } from './ui/components/volume-icon/volume-icon.com
 import { EditTracksDialogComponent } from './ui/components/dialogs/edit-tracks-dialog/edit-tracks-dialog.component';
 import { InfoDialogComponent } from './ui/components/dialogs/info-dialog/info-dialog.component';
 import { IterableMenuComponent } from './ui/components/common/iterable-menu.component';
+import { HighlightsComponent } from './ui/components/highlights/highlights.component';
+import { AlbumPlaceholderComponent } from './ui/components/highlights/album-placeholder.component';
 
 export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
     return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -329,6 +329,12 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
                 );
             });
         });
+}
+
+export function settingsInitializerFactory(settings: SettingsBase) {
+    return async () => {
+        await settings.initializeAsync();
+    };
 }
 
 @NgModule({
@@ -409,6 +415,8 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         TrackBrowserComponent,
         PlaybackQueueComponent,
         NowPlayingComponent,
+        HighlightsComponent,
+        AlbumPlaceholderComponent,
         NowPlayingPlaybackPaneComponent,
         SearchBoxComponent,
         PlaylistFolderBrowserComponent,
@@ -513,8 +521,6 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         FanartApi,
         ChartLyricsApi,
         AZLyricsApi,
-        WebSearchLyricsApi,
-        WebSearchApi,
         MetadataPatcher,
         TracksColumnsOrdering,
         SemanticZoomHeaderAdder,
@@ -596,6 +602,12 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         { provide: EventListenerServiceBase, useClass: EventListenerService },
         { provide: AudioVisualizerServiceBase, useClass: AudioVisualizerService },
         { provide: SettingsBase, useClass: Settings },
+        {
+            provide: APP_INITIALIZER,
+            useFactory: settingsInitializerFactory,
+            deps: [SettingsBase],
+            multi: true,
+        },
         { provide: DatabaseMigratorBase, useClass: DatabaseMigrator },
         { provide: SchedulerBase, useClass: Scheduler },
         { provide: ApplicationBase, useClass: Application },

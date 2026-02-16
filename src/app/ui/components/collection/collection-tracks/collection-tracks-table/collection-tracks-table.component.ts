@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, ViewEncapsulation, ViewChild, ElementRef } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { Logger } from '../../../../../common/logger';
 import { PlaybackStarted } from '../../../../../services/playback/playback-started';
@@ -20,7 +20,9 @@ import { TranslatorServiceBase } from '../../../../../services/translator/transl
 import { DesktopBase } from '../../../../../common/io/desktop.base';
 import { MouseSelectionWatcher } from '../../../mouse-selection-watcher';
 import { ContextMenuOpener } from '../../../context-menu-opener';
-import {MetadataService} from "../../../../../services/metadata/metadata.service";
+import { MetadataService } from '../../../../../services/metadata/metadata.service';
+import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+import { TrackServiceBase } from '../../../../../services/track/track.service.base';
 
 @Component({
     selector: 'app-collection-tracks-table',
@@ -34,6 +36,8 @@ export class CollectionTracksTableComponent extends TrackBrowserBase implements 
     private subscription: Subscription = new Subscription();
     private _tracks: TrackModels = new TrackModels();
 
+    @ViewChild(CdkVirtualScrollViewport) public viewPort: CdkVirtualScrollViewport;
+
     public constructor(
         public playbackService: PlaybackService,
         public mouseSelectionWatcher: MouseSelectionWatcher,
@@ -43,6 +47,7 @@ export class CollectionTracksTableComponent extends TrackBrowserBase implements 
         private playbackIndicationService: PlaybackIndicationServiceBase,
         private tracksColumnsService: TracksColumnsServiceBase,
         private tracksColumnsOrdering: TracksColumnsOrdering,
+        private trackService: TrackServiceBase,
         collectionService: CollectionServiceBase,
         dialogService: DialogServiceBase,
         translatorService: TranslatorServiceBase,
@@ -125,6 +130,13 @@ export class CollectionTracksTableComponent extends TrackBrowserBase implements 
         this.subscription.add(
             this.playbackService.playbackStarted$.subscribe((playbackStarted: PlaybackStarted) => {
                 this.playbackIndicationService.setPlayingTrack(this.orderedTracks, playbackStarted.currentTrack);
+                this.trackService.scrollToPlayingTrack(this.orderedTracks, this.viewPort);
+            }),
+        );
+
+        this.subscription.add(
+            this.playbackService.playbackResumed$.subscribe(() => {
+                this.trackService.scrollToPlayingTrack(this.orderedTracks, this.viewPort);
             }),
         );
 
@@ -259,6 +271,7 @@ export class CollectionTracksTableComponent extends TrackBrowserBase implements 
 
         this.orderedTracks = [...orderedTracks];
         this.playbackIndicationService.setPlayingTrack(this.orderedTracks, this.playbackService.currentTrack);
+        this.trackService.scrollToPlayingTrack(this.orderedTracks, this.viewPort);
     }
 
     private updateTrackRating(trackWithUpToDateRating: TrackModel): void {
@@ -319,5 +332,11 @@ export class CollectionTracksTableComponent extends TrackBrowserBase implements 
 
     public orderByDateLastPlayed(): void {
         this.tracksColumnsService.setTracksColumnsOrder(TracksColumnsOrderColumn.dateLastPlayed);
+    }
+
+    public async shuffleAllAsync(): Promise<void> {
+        const tracks: TrackModels = this.trackService.getVisibleTracks();
+        this.playbackService.forceShuffled();
+        await this.playbackService.enqueueAndPlayTracksAsync(tracks.tracks);
     }
 }

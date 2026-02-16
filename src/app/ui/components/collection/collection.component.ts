@@ -6,7 +6,7 @@ import { DocumentProxy } from '../../../common/io/document-proxy';
 import { AnimatedPage } from '../animated-page';
 import { enterLeftToRight, enterRightToLeft } from '../../animations/animations';
 import { CollectionNavigationService } from '../../../services/collection-navigation/collection-navigation.service';
-import {PlaybackService} from "../../../services/playback/playback.service";
+import { PlaybackService } from '../../../services/playback/playback.service';
 
 @Component({
     selector: 'app-collection',
@@ -32,7 +32,7 @@ export class CollectionComponent extends AnimatedPage implements AfterViewInit {
     @HostListener('document:keyup', ['$event'])
     public handleKeyboardEvent(event: KeyboardEvent): void {
         if (event.key === ' ' && !(event.target instanceof HTMLInputElement)) {
-            this.playbackService.togglePlayback();
+            void this.playbackService.togglePlaybackAsync();
         }
     }
 

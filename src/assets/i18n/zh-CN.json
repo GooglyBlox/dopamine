@@ -317,5 +317,20 @@
     "no-image-found-online": "未找到在线图像",
     "image": "图像",
     "choose-order": "选择一个顺序",
-    "choose-type": "选择一个类型"
+    "choose-type": "选择一个类型",
+    "follow-song": "跟随歌曲",
+    "jump-to-playing-song": "自动滚动到播放中的歌曲",
+    "images": "图像",
+    "i-prefer-square-images": "使用方形图像",
+    "none": "无",
+    "oldest-first": "最旧优先",
+    "newest-first": "最新优先",
+    "compact-view": "紧凑视图",
+    "expanded-view": "扩展视图",
+    "cannot-play-m4a-file": "M4A 文件无法播放. 请注意 Dopamine 仅支持 AAC 编码的 M4A 文件且不支持苹果 ALAC 编码的 M4A 文件. 请查看日志以获取更多信息.",
+    "cannot-play-audio-file": "已选音频文件无法播放. 请查看日志以获取更多信息.",
+    "highlights": "强调",
+    "composer": "作曲家",
+    "conductor": "指挥家",
+    "bpm": "拍子数"
 }
