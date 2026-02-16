@@ -18,6 +18,8 @@ import { EditTracksDialogComponent } from '../../ui/components/dialogs/edit-trac
 import { InfoDialogComponent } from '../../ui/components/dialogs/info-dialog/info-dialog.component';
 import { InfoData } from './info-data';
 import { TranslatorServiceBase } from '../translator/translator.service.base';
+import { DuplicateGroup } from '../duplicate/duplicate-group';
+import { DuplicateTracksDialogComponent } from '../../ui/components/dialogs/duplicate-tracks-dialog/duplicate-tracks-dialog.component';
 
 @Injectable()
 export class DialogService implements DialogServiceBase {
@@ -121,5 +123,16 @@ export class DialogService implements DialogServiceBase {
     public async cannotPlayAudioFileAsync(): Promise<void> {
         const message: string = await this.translatorService.getAsync('cannot-play-audio-file');
         this.showErrorDialog(message);
+    }
+
+    public async showDuplicateTracksDialogAsync(duplicateGroups: DuplicateGroup[]): Promise<TrackModel[]> {
+        const dialogRef: MatDialogRef<DuplicateTracksDialogComponent, TrackModel[]> = this.dialog.open(DuplicateTracksDialogComponent, {
+            width: '650px',
+            data: duplicateGroups,
+        });
+
+        const result: TrackModel[] | undefined = await dialogRef.afterClosed().toPromise();
+
+        return result ?? [];
     }
 }

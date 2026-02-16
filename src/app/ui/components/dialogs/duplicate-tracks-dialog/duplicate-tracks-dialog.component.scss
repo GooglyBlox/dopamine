@@ -1,0 +1,50 @@
+.duplicate-tracks__description {
+    color: var(--theme-secondary-foreground);
+    font-size: 13px;
+}
+
+.duplicate-tracks__groups {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.duplicate-tracks__group {
+    border: 1px solid var(--theme-separator);
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.duplicate-tracks__group-header {
+    font-weight: 500;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--theme-separator);
+}
+
+.duplicate-tracks__group-title {
+    color: var(--theme-primary-foreground);
+}
+
+.duplicate-tracks__group-artists {
+    color: var(--theme-secondary-foreground);
+}
+
+.duplicate-tracks__track {
+    padding: 4px 0;
+    cursor: pointer;
+}
+
+.duplicate-tracks__track:hover {
+    background: var(--theme-hover-background);
+}
+
+.duplicate-tracks__track-path {
+    font-size: 12px;
+    color: var(--theme-primary-foreground);
+    word-break: break-all;
+}
+
+.duplicate-tracks__track-details {
+    font-size: 11px;
+    color: var(--theme-secondary-foreground);
+}

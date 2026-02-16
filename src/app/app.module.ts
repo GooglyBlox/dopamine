@@ -295,6 +295,8 @@ import { InfoDialogComponent } from './ui/components/dialogs/info-dialog/info-di
 import { IterableMenuComponent } from './ui/components/common/iterable-menu.component';
 import { HighlightsComponent } from './ui/components/highlights/highlights.component';
 import { AlbumPlaceholderComponent } from './ui/components/highlights/album-placeholder.component';
+import { DuplicateTracksDialogComponent } from './ui/components/dialogs/duplicate-tracks-dialog/duplicate-tracks-dialog.component';
+import { DuplicateDetectionService } from './services/duplicate/duplicate-detection.service';
 
 export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
     return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -460,6 +462,7 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         CoverPlayerVolumeControlComponent,
         VolumeIconComponent,
         EditTracksDialogComponent,
+        DuplicateTracksDialogComponent,
         IterableMenuComponent,
     ],
     imports: [
@@ -567,6 +570,7 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         OnlineAlbumArtworkGetter,
         ExternalArtworkPathGetter,
         IndexingService,
+        DuplicateDetectionService,
         { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: CustomTooltipDefaults },
         { provide: FileAccessBase, useClass: FileAccess },
         { provide: TrackRepositoryBase, useClass: TrackRepository },

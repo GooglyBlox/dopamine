@@ -1,5 +1,6 @@
 import { PlaylistModel } from '../playlist/playlist-model';
 import { TrackModel } from '../track/track-model';
+import { DuplicateGroup } from '../duplicate/duplicate-group';
 
 export abstract class DialogServiceBase {
     public abstract showConfirmationDialogAsync(dialogTitle: string, dialogText: string): Promise<boolean>;
@@ -18,4 +19,5 @@ export abstract class DialogServiceBase {
     public abstract showEditTracksAsync(tracks: TrackModel[]): Promise<boolean>;
     public abstract cannotPlayM4aFileAsync(): Promise<void>;
     public abstract cannotPlayAudioFileAsync(): Promise<void>;
+    public abstract showDuplicateTracksDialogAsync(duplicateGroups: DuplicateGroup[]): Promise<TrackModel[]>;
 }

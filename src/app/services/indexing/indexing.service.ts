@@ -15,6 +15,11 @@ import { IFileMetadata } from '../../common/metadata/i-file-metadata';
 import { Track } from '../../data/entities/track';
 import { TrackFiller } from './track-filler';
 import { PlaybackService } from '../playback/playback.service';
+import { DuplicateDetectionService } from '../duplicate/duplicate-detection.service';
+import { DialogServiceBase } from '../dialog/dialog.service.base';
+import { CollectionServiceBase } from '../collection/collection.service.base';
+import { DuplicateGroup } from '../duplicate/duplicate-group';
+import { TrackModel } from '../track/track-model';
 
 @Injectable()
 export class IndexingService implements OnDestroy {
@@ -34,6 +39,9 @@ export class IndexingService implements OnDestroy {
         private settings: SettingsBase,
         private ipcProxy: IpcProxyBase,
         private logger: Logger,
+        private duplicateDetectionService: DuplicateDetectionService,
+        private dialogService: DialogServiceBase,
+        private collectionService: CollectionServiceBase,
     ) {
         this.initializeSubscriptions();
     }
@@ -61,6 +69,7 @@ export class IndexingService implements OnDestroy {
             await this.albumArtworkIndexer.indexAlbumArtworkAsync();
             this.isIndexingCollection = false;
             this.indexingFinished.next();
+            await this.checkForDuplicatesAsync();
         });
     }
 
@@ -134,6 +143,31 @@ export class IndexingService implements OnDestroy {
 
     public onAlbumGroupingChanged(): void {
         this.albumGroupingHasChanged = true;
+    }
+
+    private async checkForDuplicatesAsync(): Promise<void> {
+        try {
+            const duplicateGroups: DuplicateGroup[] = this.duplicateDetectionService.detectDuplicates();
+
+            if (duplicateGroups.length === 0) {
+                return;
+            }
+
+            this.logger.info(
+                `Found ${duplicateGroups.length} duplicate group(s).`,
+                'IndexingService',
+                'checkForDuplicatesAsync',
+            );
+
+            const tracksToRemove: TrackModel[] = await this.dialogService.showDuplicateTracksDialogAsync(duplicateGroups);
+
+            if (tracksToRemove.length > 0) {
+                await this.collectionService.deleteTracksAsync(tracksToRemove);
+                this.indexingFinished.next();
+            }
+        } catch (e: unknown) {
+            this.logger.error(e, 'Error checking for duplicates', 'IndexingService', 'checkForDuplicatesAsync');
+        }
     }
 
     private createWorkerArgs(task: string) {

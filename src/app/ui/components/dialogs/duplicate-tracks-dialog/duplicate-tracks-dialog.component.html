@@ -1,0 +1,29 @@
+<app-dialog-header icon="las la-copy" title="{{ 'duplicate-songs' | translate }}"></app-dialog-header>
+<mat-dialog-content>
+    <div class="duplicate-tracks__description mb-3">
+        {{ 'duplicate-songs-found' | translate }}
+    </div>
+    <div class="duplicate-tracks__groups">
+        <div *ngFor="let group of duplicateGroups" class="duplicate-tracks__group mb-3">
+            <div class="duplicate-tracks__group-header">
+                <span class="duplicate-tracks__group-title">{{ group.title }}</span>
+                <span class="duplicate-tracks__group-artists"> - {{ group.artists }}</span>
+            </div>
+            <div *ngFor="let track of group.tracks" class="duplicate-tracks__track d-flex align-items-center">
+                <app-toggle-switch [isChecked]="isSelected(track)" (isCheckedChange)="toggleTrack(track)"> </app-toggle-switch>
+                <div class="duplicate-tracks__track-info ml-2">
+                    <div class="duplicate-tracks__track-path">{{ track.path }}</div>
+                    <div class="duplicate-tracks__track-details">
+                        {{ formatDuration(track.durationInMilliseconds) }} &middot; {{ formatFileSize(track.fileSizeInBytes) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</mat-dialog-content>
+<mat-dialog-actions>
+    <app-accent-button class="mr-2" (click)="removeSelected()" [ngClass]="{ inactive: selectedCount === 0 }">
+        {{ 'remove-selected' | translate }} <span *ngIf="selectedCount > 0">({{ selectedCount }})</span>
+    </app-accent-button>
+    <app-transparent-button (click)="close()">{{ 'close' | translate }}</app-transparent-button>
+</mat-dialog-actions>
