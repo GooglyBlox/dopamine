@@ -454,7 +454,7 @@ export class PlaybackService {
         const nextTrack: TrackModel | undefined = this.queue.getNextTrack(this.currentTrack, this.loopMode === LoopMode.All);
 
         if (nextTrack !== undefined) {
-            if (this._preloadTimeoutId) {
+            if (this._preloadTimeoutId !== undefined && this._preloadTimeoutId !== null) {
                 clearTimeout(this._preloadTimeoutId);
             }
             this._preloadTimeoutId = setTimeout(() => {
@@ -463,7 +463,7 @@ export class PlaybackService {
                 }
                 this._audioPlayer.preloadNext(nextTrack);
                 this.logger.info(`Preloaded '${nextTrack.path}'`, 'PlaybackService', 'preloadNextTrackAfterDelay');
-            }, 2000);
+            }, this.settings.useCrossfade === true ? 500 : 2000);
         }
     }
 
