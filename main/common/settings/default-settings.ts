@@ -56,6 +56,7 @@ export const DEFAULT_SETTINGS = {
     showTracksPage: true,
     showPlaylistsPage: true,
     showFoldersPage: true,
+    showRecommendationsPage: true,
     showRating: true,
     saveRatingToAudioFiles: false,
     tracksPageVisibleColumns: 'rating;artists;duration;number',

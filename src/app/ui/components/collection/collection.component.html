@@ -21,6 +21,9 @@
             <app-sub-menu-item *ngIf="settings.showFoldersPage" [page]="5" [selectedPage]="this.page" (click)="this.setPage(5)">
                 {{ 'folders' | translate }}
             </app-sub-menu-item>
+            <app-sub-menu-item *ngIf="settings.showRecommendationsPage" [page]="6" [selectedPage]="this.page" (click)="this.setPage(6)">
+                {{ 'recommendations' | translate }}
+            </app-sub-menu-item>
         </app-sub-menu>
         <div class="window-frame__dragarea"></div>
         <app-search-box class="p-2"></app-search-box>
@@ -49,6 +52,9 @@
             <!-- Folders -->
             <app-collection-folders *ngIf="this.leftToRight(5)" [@enterLeftToRight]></app-collection-folders>
             <app-collection-folders *ngIf="this.rightToLeft(5)" [@enterRightToLeft]></app-collection-folders>
+            <!-- Recommendations -->
+            <app-collection-recommendations *ngIf="this.leftToRight(6)" [@enterLeftToRight]></app-collection-recommendations>
+            <app-collection-recommendations *ngIf="this.rightToLeft(6)" [@enterRightToLeft]></app-collection-recommendations>
         </div>
         <!-- Playback controls -->
         <div class="app-collection-playback-controls__container">

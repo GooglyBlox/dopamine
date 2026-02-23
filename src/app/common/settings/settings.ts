@@ -580,6 +580,16 @@ export class Settings implements SettingsBase {
         this.set('showFoldersPage', v);
     }
 
+    // showRecommendationsPage
+    public get showRecommendationsPage(): boolean {
+        const val = this.get<boolean>('showRecommendationsPage');
+        return val ?? true;
+    }
+
+    public set showRecommendationsPage(v: boolean) {
+        this.set('showRecommendationsPage', v);
+    }
+
     // saveRatingToAudioFiles
     public get saveRatingToAudioFiles(): boolean {
         return this.get<boolean>('saveRatingToAudioFiles');

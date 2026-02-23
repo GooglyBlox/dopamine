@@ -21,7 +21,8 @@ export class CollectionNavigationService {
             this.settings.showAlbumsPage ||
             this.settings.showTracksPage ||
             this.settings.showPlaylistsPage ||
-            this.settings.showFoldersPage
+            this.settings.showFoldersPage ||
+            this.settings.showRecommendationsPage
         );
     }
 
@@ -60,6 +61,11 @@ export class CollectionNavigationService {
             return;
         }
 
+        if (this.settings.showRecommendationsPage) {
+            this.settings.selectedCollectionPage = 6;
+            return;
+        }
+
         this.settings.selectedCollectionPage = 0;
     }
 
@@ -77,6 +83,8 @@ export class CollectionNavigationService {
                 return this.settings.showPlaylistsPage;
             case 5:
                 return this.settings.showFoldersPage;
+            case 6:
+                return this.settings.showRecommendationsPage;
             default:
                 return false;
         }

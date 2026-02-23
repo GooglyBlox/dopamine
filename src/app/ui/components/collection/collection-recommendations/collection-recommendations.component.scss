@@ -1,0 +1,215 @@
+.recommendations-viewport {
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 !important;
+}
+
+.recommendations-container {
+    padding: 20px 28px 100px 28px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.recommendations-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.recommendations-title {
+    color: var(--theme-accent-color);
+    font-weight: lighter;
+    font-size: calc(var(--fontsize) * 1.7);
+}
+
+.recommendations-refresh-btn {
+    background: none;
+    border: none;
+    color: var(--theme-secondary-text);
+    font-size: calc(var(--fontsize) * 1.3);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+
+    &:hover {
+        color: var(--theme-primary-text);
+        background-color: var(--theme-hovered-item-background);
+    }
+}
+
+.recommendations-lanes {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.recommendation-lane {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.lane-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 12px 0;
+}
+
+.lane-header__info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.lane-header__icon {
+    font-size: calc(var(--fontsize) * 1.8);
+    color: var(--theme-accent-color);
+    flex-shrink: 0;
+    width: 32px;
+    text-align: center;
+}
+
+.lane-header__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.lane-header__title {
+    font-size: calc(var(--fontsize) * 1.15);
+    font-weight: 500;
+    color: var(--theme-primary-text);
+}
+
+.lane-header__description {
+    font-size: calc(var(--fontsize) * 0.85);
+    margin-top: 2px;
+}
+
+.lane-header__actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.lane-action-btn {
+    background: none;
+    border: 1px solid var(--theme-pane-separators);
+    color: var(--theme-secondary-text);
+    font-size: calc(var(--fontsize) * 1.0);
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+
+    &:hover {
+        color: var(--theme-primary-text);
+        background-color: var(--theme-hovered-item-background);
+        border-color: var(--theme-secondary-text);
+    }
+}
+
+.lane-tracks {
+    display: flex;
+    flex-direction: column;
+}
+
+.lane-track {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 4px;
+    gap: 10px;
+    cursor: default;
+    transition: background-color 0.1s ease;
+
+    &:hover {
+        background-color: var(--theme-hovered-item-background);
+
+        .lane-track__play-btn {
+            opacity: 1;
+        }
+    }
+}
+
+.lane-track__number {
+    width: 24px;
+    text-align: right;
+    font-size: calc(var(--fontsize) * 0.85);
+    flex-shrink: 0;
+}
+
+.lane-track__info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.lane-track__title {
+    font-size: var(--fontsize);
+    color: var(--theme-primary-text);
+    line-height: 1.3;
+}
+
+.lane-track__artist {
+    font-size: calc(var(--fontsize) * 0.85);
+    line-height: 1.3;
+}
+
+.lane-track__duration {
+    font-size: calc(var(--fontsize) * 0.85);
+    flex-shrink: 0;
+    min-width: 36px;
+    text-align: right;
+}
+
+.lane-track__play-btn {
+    background: none;
+    border: none;
+    color: var(--theme-primary-text);
+    font-size: calc(var(--fontsize) * 1.0);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: all 0.1s ease;
+    flex-shrink: 0;
+
+    &:hover {
+        color: var(--theme-accent-color);
+    }
+}
+
+.recommendations-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    padding: 40px;
+}
+
+.recommendations-empty__icon {
+    font-size: 64px;
+    color: var(--theme-secondary-text);
+    opacity: 0.4;
+}
+
+.recommendations-empty__text {
+    font-size: calc(var(--fontsize) * 1.1);
+    text-align: center;
+    max-width: 400px;
+    line-height: 1.6;
+}
+
+.recommendations-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}

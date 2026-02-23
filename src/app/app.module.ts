@@ -297,6 +297,7 @@ import { HighlightsComponent } from './ui/components/highlights/highlights.compo
 import { AlbumPlaceholderComponent } from './ui/components/highlights/album-placeholder.component';
 import { DuplicateTracksDialogComponent } from './ui/components/dialogs/duplicate-tracks-dialog/duplicate-tracks-dialog.component';
 import { DuplicateDetectionService } from './services/duplicate/duplicate-detection.service';
+import { CollectionRecommendationsComponent } from './ui/components/collection/collection-recommendations/collection-recommendations.component';
 
 export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
     return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -464,6 +465,7 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         EditTracksDialogComponent,
         DuplicateTracksDialogComponent,
         IterableMenuComponent,
+        CollectionRecommendationsComponent,
     ],
     imports: [
         BrowserAnimationsModule,

@@ -1,0 +1,59 @@
+<div class="collection-viewport recommendations-viewport">
+    <div class="recommendations-container" *ngIf="!isLoading && lanes.length > 0">
+        <div class="recommendations-header">
+            <span class="recommendations-title">{{ 'recommendations' | translate }}</span>
+            <button class="recommendations-refresh-btn" (click)="refresh()" matTooltip="{{ 'recommendations-refresh' | translate }}">
+                <i class="las la-sync-alt"></i>
+            </button>
+        </div>
+
+        <div class="recommendations-lanes">
+            <div class="recommendation-lane" *ngFor="let lane of lanes">
+                <div class="lane-header">
+                    <div class="lane-header__info">
+                        <i class="{{ lane.icon }} lane-header__icon"></i>
+                        <div class="lane-header__text">
+                            <span class="lane-header__title">{{ lane.titleKey | translate }}</span>
+                            <span class="lane-header__description secondary-text">{{ lane.descriptionKey | translate }}</span>
+                        </div>
+                    </div>
+                    <div class="lane-header__actions">
+                        <button class="lane-action-btn" (click)="playLaneAsync(lane)" matTooltip="{{ 'play-all' | translate }}">
+                            <i class="las la-play"></i>
+                        </button>
+                        <button class="lane-action-btn" (click)="shuffleLaneAsync(lane)" matTooltip="{{ 'shuffle-all' | translate }}">
+                            <i class="las la-random"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="lane-tracks">
+                    <div
+                        class="lane-track"
+                        *ngFor="let track of lane.tracks; let i = index"
+                        (dblclick)="playTrackAsync(lane, track)"
+                    >
+                        <span class="lane-track__number secondary-text">{{ i + 1 }}</span>
+                        <div class="lane-track__info">
+                            <span class="lane-track__title ellipsis">{{ track.title }}</span>
+                            <span class="lane-track__artist ellipsis secondary-text">{{ track.artists }}</span>
+                        </div>
+                        <span class="lane-track__duration secondary-text">{{ formatDuration(track.durationInMilliseconds) }}</span>
+                        <button class="lane-track__play-btn" (click)="playTrackAsync(lane, track)" matTooltip="{{ 'play' | translate }}">
+                            <i class="las la-play"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="recommendations-empty" *ngIf="!isLoading && lanes.length === 0">
+        <i class="las la-magic recommendations-empty__icon"></i>
+        <span class="recommendations-empty__text secondary-text">{{ 'recommendations-empty' | translate }}</span>
+    </div>
+
+    <div class="recommendations-loading" *ngIf="isLoading">
+        <mat-spinner diameter="40"></mat-spinner>
+    </div>
+</div>

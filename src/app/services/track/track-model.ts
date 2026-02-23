@@ -129,8 +129,22 @@ export class TrackModel implements ISelectable {
         return commaSeparatedGenres;
     }
 
+    public get rawGenres(): string[] {
+        const trackGenres: string[] = DataDelimiter.fromDelimitedString(this.track.genres);
+
+        if (DataDelimiter.isUnknownValue(trackGenres)) {
+            return [];
+        }
+
+        return trackGenres.filter((x) => !StringUtils.isNullOrWhiteSpace(x));
+    }
+
     public get sortableGenres(): string {
         return StringUtils.getSortableString(this.genres, false);
+    }
+
+    public get beatsPerMinute(): number {
+        return this.track.beatsPerMinute ?? 0;
     }
 
     public get albumKey(): string {
