@@ -25,6 +25,7 @@ const { TrackRemover } = require('../indexing/track-remover');
 const { TrackAdder } = require('../indexing/track-adder');
 const { Indexer } = require('../indexing/indexer');
 const { TrackIndexer } = require('../indexing/track-indexer');
+const { ArtistNameConsistencyChecker } = require('../indexing/artist-name-consistency-checker');
 
 global.iocContainer = new Map();
 
@@ -75,6 +76,11 @@ class Ioc {
         );
 
         global.iocContainer.set(
+            'ArtistNameConsistencyChecker',
+            new ArtistNameConsistencyChecker(Ioc.get('TrackRepository'), Ioc.get('AlbumKeyGenerator'), Ioc.get('Logger')),
+        );
+
+        global.iocContainer.set(
             'CollectionChecker',
             new CollectionChecker(Ioc.get('TrackRepository'), Ioc.get('IndexablePathFetcher'), Ioc.get('Logger')),
         );
@@ -85,6 +91,7 @@ class Ioc {
                 Ioc.get('TrackRepository'),
                 Ioc.get('TrackVerifier'),
                 Ioc.get('TrackFiller'),
+                Ioc.get('ArtistNameConsistencyChecker'),
                 Ioc.get('WorkerProxy'),
                 Ioc.get('Logger'),
             ),
@@ -109,6 +116,7 @@ class Ioc {
                 Ioc.get('TrackRepository'),
                 Ioc.get('IndexablePathFetcher'),
                 Ioc.get('TrackFiller'),
+                Ioc.get('ArtistNameConsistencyChecker'),
                 Ioc.get('WorkerProxy'),
                 Ioc.get('Logger'),
             ),

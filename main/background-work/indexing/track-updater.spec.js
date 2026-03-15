@@ -3,6 +3,7 @@ const { TrackFillerMock } = require('../mocks/track-filler-mock');
 const { LoggerMock } = require('../mocks/logger-mock');
 const { WorkerProxyMock } = require('../mocks/worker-proxy-mock');
 const { TrackVerifierMock } = require('../mocks/track-verifier-mock');
+const { ArtistNameConsistencyCheckerMock } = require('../mocks/artist-name-consistency-checker-mock');
 const { TrackUpdater } = require('./track-updater');
 const { Track } = require('../data/entities/track');
 
@@ -10,6 +11,7 @@ describe('TrackUpdater', () => {
     let trackRepositoryMock;
     let trackFillerMock;
     let trackVerifierMock;
+    let artistNameConsistencyCheckerMock;
     let workerProxyMock;
     let loggerMock;
 
@@ -17,12 +19,13 @@ describe('TrackUpdater', () => {
         trackRepositoryMock = new TrackRepositoryMock();
         trackVerifierMock = new TrackVerifierMock();
         trackFillerMock = new TrackFillerMock();
+        artistNameConsistencyCheckerMock = new ArtistNameConsistencyCheckerMock();
         workerProxyMock = new WorkerProxyMock();
         loggerMock = new LoggerMock();
     });
 
     function createSut() {
-        return new TrackUpdater(trackRepositoryMock, trackVerifierMock, trackFillerMock, workerProxyMock, loggerMock);
+        return new TrackUpdater(trackRepositoryMock, trackVerifierMock, trackFillerMock, artistNameConsistencyCheckerMock, workerProxyMock, loggerMock);
     }
 
     describe('updateTracksThatAreOutOfDateAsync', () => {

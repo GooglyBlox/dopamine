@@ -3,10 +3,11 @@ const { Timer } = require('../common/scheduling/timer');
 const { MathUtils } = require('../common/utils/math-utils');
 
 class TrackUpdater {
-    constructor(trackRepository, trackVerifier, trackFiller, workerProxy, logger) {
+    constructor(trackRepository, trackVerifier, trackFiller, artistNameConsistencyChecker, workerProxy, logger) {
         this.trackRepository = trackRepository;
         this.trackVerifier = trackVerifier;
         this.trackFiller = trackFiller;
+        this.artistNameConsistencyChecker = artistNameConsistencyChecker;
         this.workerProxy = workerProxy;
         this.logger = logger;
     }
@@ -19,6 +20,7 @@ class TrackUpdater {
             const tracks = this.trackRepository.getAllTracks() ?? [];
 
             let numberOfUpdatedTracks = 0;
+            const updatedTracks = [];
 
             const loggedPercentages = new Set();
 
@@ -27,6 +29,7 @@ class TrackUpdater {
                     if (this.trackVerifier.doesTrackNeedIndexing(tracks[i]) || this.trackVerifier.isTrackOutOfDate(tracks[i])) {
                         const filledTrack = await this.trackFiller.addFileMetadataToTrack(tracks[i], false);
                         this.trackRepository.updateTrack(filledTrack);
+                        updatedTracks.push(filledTrack);
                         numberOfUpdatedTracks++;
 
                         const percentageOfProcessedTracks = MathUtils.calculatePercentage(i + 1, tracks.length);
@@ -52,6 +55,11 @@ class TrackUpdater {
                         'updateTracksThatAreOutOfDateAsync',
                     );
                 }
+            }
+
+            // Check artist name consistency for updated tracks
+            if (updatedTracks.length > 0) {
+                this.artistNameConsistencyChecker.checkAndFixConsistency(updatedTracks);
             }
 
             timer.stop();

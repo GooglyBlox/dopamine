@@ -5,12 +5,13 @@ const { AddingTracksMessage } = require('./messages/adding-tracks-message');
 const { MathUtils } = require('../common/utils/math-utils');
 
 class TrackAdder {
-    constructor(removedTrackRepository, folderTrackRepository, trackRepository, indexablePathFetcher, trackFiller, workerProxy, logger) {
+    constructor(removedTrackRepository, folderTrackRepository, trackRepository, indexablePathFetcher, trackFiller, artistNameConsistencyChecker, workerProxy, logger) {
         this.removedTrackRepository = removedTrackRepository;
         this.folderTrackRepository = folderTrackRepository;
         this.trackRepository = trackRepository;
         this.indexablePathFetcher = indexablePathFetcher;
         this.trackFiller = trackFiller;
+        this.artistNameConsistencyChecker = artistNameConsistencyChecker;
         this.workerProxy = workerProxy;
         this.logger = logger;
     }
@@ -23,6 +24,7 @@ class TrackAdder {
             const indexablePaths = await this.#getIndexablePathsAsync(this.workerProxy.skipRemovedFilesDuringRefresh());
 
             let numberOfAddedTracks = 0;
+            const newlyAddedTracks = [];
 
             const loggedPercentages = new Set();
 
@@ -36,6 +38,7 @@ class TrackAdder {
 
                     this.folderTrackRepository.addFolderTrack(new FolderTrack(indexablePaths[i].folderId, addedTrack.trackId));
 
+                    newlyAddedTracks.push(addedTrack);
                     numberOfAddedTracks++;
 
                     const percentageOfAddedTracks = Math.round((numberOfAddedTracks / indexablePaths.length) * 100);
@@ -61,6 +64,11 @@ class TrackAdder {
                         'addTracksThatAreNotInTheDatabaseAsync',
                     );
                 }
+            }
+
+            // Check artist name consistency for newly added tracks
+            if (newlyAddedTracks.length > 0) {
+                this.artistNameConsistencyChecker.checkAndFixConsistency(newlyAddedTracks);
             }
 
             timer.stop();

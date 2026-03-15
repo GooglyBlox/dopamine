@@ -7,6 +7,7 @@ const { Track } = require('../data/entities/track');
 const { IndexablePath } = require('./indexable-path');
 const { RemovedTrackRepositoryMock } = require('../mocks/removed-track-repository-mock');
 const { TrackFillerMock } = require('../mocks/track-filler-mock');
+const { ArtistNameConsistencyCheckerMock } = require('../mocks/artist-name-consistency-checker-mock');
 const { TrackAdder } = require('./track-adder');
 const { RemovedTrack } = require('../data/entities/removed-track');
 
@@ -16,6 +17,7 @@ describe('TrackAdder', () => {
     let trackRepositoryMock;
     let indexablePathFetcherMock;
     let trackFillerMock;
+    let artistNameConsistencyCheckerMock;
     let workerProxyMock;
     let loggerMock;
 
@@ -25,6 +27,7 @@ describe('TrackAdder', () => {
         trackRepositoryMock = new TrackRepositoryMock();
         indexablePathFetcherMock = new IndexablePathFetcherMock();
         trackFillerMock = new TrackFillerMock();
+        artistNameConsistencyCheckerMock = new ArtistNameConsistencyCheckerMock();
         workerProxyMock = new WorkerProxyMock();
         loggerMock = new LoggerMock();
     });
@@ -36,6 +39,7 @@ describe('TrackAdder', () => {
             trackRepositoryMock,
             indexablePathFetcherMock,
             trackFillerMock,
+            artistNameConsistencyCheckerMock,
             workerProxyMock,
             loggerMock,
         );
