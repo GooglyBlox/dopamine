@@ -65,11 +65,11 @@ describe('ArtistNameConsistencyChecker', () => {
         return new ArtistNameConsistencyChecker(trackRepositoryMock, albumKeyGeneratorMock, loggerMock);
     }
 
-    function createTrackWithArtists(trackPath, artists, albumArtists, trackTitle) {
+    function createTrackWithArtists(trackPath, artists, albumArtists, trackTitle, albumTitle) {
         const track = new Track(trackPath);
         track.artists = artists || '';
         track.albumArtists = albumArtists || '';
-        track.albumTitle = 'Some Album';
+        track.albumTitle = albumTitle !== undefined ? albumTitle : 'Some Album';
         track.albumKey = '';
         track.trackTitle = trackTitle || '';
         return track;
@@ -686,6 +686,99 @@ describe('ArtistNameConsistencyChecker', () => {
 
             expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
                 expect.objectContaining({ trackTitle: 'WISHLIST [with Armani White]' }),
+            );
+        });
+    });
+
+    describe('album title fixing', () => {
+        it('should fix artist name in feat section of album title (single = same as track title)', () => {
+            const track1 = createTrackWithArtists('/music/glaive - Song1.mp3', ';glaive;', '');
+            const track2 = createTrackWithArtists('/music/glaive - Song2.mp3', ';glaive;', '');
+            const newTrack = createTrackWithArtists(
+                '/music/Lovesickxo - Mixed Signals.mp3',
+                ';Lovesickxo;;Glaive;',
+                '',
+                'Mixed Signals (feat. Glaive)',
+                'Mixed Signals (feat. Glaive)',
+            );
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([track1, track2, newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    trackTitle: 'Mixed Signals (feat. glaive)',
+                    albumTitle: 'Mixed Signals (feat. glaive)',
+                }),
+            );
+        });
+
+        it('should fix album title independently of track title', () => {
+            const track1 = createTrackWithArtists('/music/glaive - Song1.mp3', ';glaive;', '');
+            const track2 = createTrackWithArtists('/music/glaive - Song2.mp3', ';glaive;', '');
+            const newTrack = createTrackWithArtists(
+                '/music/Lovesickxo - Mixed Signals.mp3',
+                ';Lovesickxo;;Glaive;',
+                '',
+                'Mixed Signals',
+                'Mixed Signals (feat. Glaive)',
+            );
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([track1, track2, newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    trackTitle: 'Mixed Signals',
+                    albumTitle: 'Mixed Signals (feat. glaive)',
+                }),
+            );
+        });
+
+        it('should NOT change artist names outside feat sections in album title', () => {
+            const track1 = createTrackWithArtists('/music/funeral - Song1.mp3', ';funeral;', '');
+            const track2 = createTrackWithArtists('/music/funeral - Song2.mp3', ';funeral;', '');
+            const newTrack = createTrackWithArtists(
+                '/music/OtherArtist - Song.mp3',
+                ';OtherArtist;;Funeral;',
+                '',
+                'Song',
+                'funeral freestyle',
+            );
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([track1, track2, newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
+                expect.objectContaining({ albumTitle: 'funeral freestyle' }),
+            );
+        });
+
+        it('should recalculate albumKey when album title changes', () => {
+            const track1 = createTrackWithArtists('/music/glaive - Song1.mp3', ';glaive;', '');
+            const track2 = createTrackWithArtists('/music/glaive - Song2.mp3', ';glaive;', '');
+            const newTrack = createTrackWithArtists(
+                '/music/Lovesickxo - Mixed Signals.mp3',
+                ';Lovesickxo;;Glaive;',
+                '',
+                'Mixed Signals (feat. Glaive)',
+                'Mixed Signals (feat. Glaive)',
+            );
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([track1, track2, newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(albumKeyGeneratorMock.generateAlbumKey).toHaveBeenCalledWith(
+                'Mixed Signals (feat. glaive)',
+                expect.anything(),
             );
         });
     });

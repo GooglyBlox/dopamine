@@ -158,11 +158,14 @@ class ArtistNameConsistencyChecker {
                 // Collect the old->canonical replacements that apply to this track
                 const replacements = this.#collectReplacements(artists, fixedArtists, albumArtists, fixedAlbumArtists);
 
-                // Fix artist names in feat/ft/with sections of the track title
+                // Fix artist names in feat/ft/with sections of the track title and album title
                 const fixedTitle = this.#replaceInFeatSections(track.trackTitle || '', replacements);
                 const titleChanged = fixedTitle !== (track.trackTitle || '');
 
-                // Update the actual file metadata (artists, album artists, and title)
+                const fixedAlbumTitle = this.#replaceInFeatSections(track.albumTitle || '', replacements);
+                const albumTitleChanged = fixedAlbumTitle !== (track.albumTitle || '');
+
+                // Update the actual file metadata
                 this.#updateFileMetadata(
                     track.path,
                     fixedArtists.names,
@@ -170,6 +173,7 @@ class ArtistNameConsistencyChecker {
                     artistsChanged,
                     albumArtistsChanged,
                     titleChanged ? fixedTitle : undefined,
+                    albumTitleChanged ? fixedAlbumTitle : undefined,
                 );
 
                 // Update the database record
@@ -179,7 +183,14 @@ class ArtistNameConsistencyChecker {
 
                 if (albumArtistsChanged) {
                     track.albumArtists = DataDelimiter.toDelimitedString(fixedAlbumArtists.names);
-                    // Recalculate albumKey since it depends on album artists
+                }
+
+                if (albumTitleChanged) {
+                    track.albumTitle = fixedAlbumTitle;
+                }
+
+                // Recalculate albumKey if album artists or album title changed
+                if (albumArtistsChanged || albumTitleChanged) {
                     track.albumKey = this.albumKeyGenerator.generateAlbumKey(
                         track.albumTitle,
                         fixedAlbumArtists.names,
@@ -206,6 +217,7 @@ class ArtistNameConsistencyChecker {
                 if (artistsChanged) changes.push(`artists: "${fixedArtists.names.join(', ')}"`);
                 if (albumArtistsChanged) changes.push(`albumArtists: "${fixedAlbumArtists.names.join(', ')}"`);
                 if (titleChanged) changes.push(`title: "${fixedTitle}"`);
+                if (albumTitleChanged) changes.push(`albumTitle: "${fixedAlbumTitle}"`);
                 if (fileRenamed) changes.push(`renamed to: "${path.basename(newPath)}"`);
 
                 this.logger.info(
@@ -246,9 +258,9 @@ class ArtistNameConsistencyChecker {
     }
 
     /**
-     * Updates the artist, album artist, and/or title tags in the actual audio file.
+     * Updates the artist, album artist, title, and/or album tags in the actual audio file.
      */
-    #updateFileMetadata(filePath, artists, albumArtists, updateArtists, updateAlbumArtists, newTitle) {
+    #updateFileMetadata(filePath, artists, albumArtists, updateArtists, updateAlbumArtists, newTitle, newAlbumTitle) {
         const tagLibFile = File.createFromPath(filePath);
 
         try {
@@ -262,6 +274,10 @@ class ArtistNameConsistencyChecker {
 
             if (newTitle !== undefined) {
                 tagLibFile.tag.title = newTitle;
+            }
+
+            if (newAlbumTitle !== undefined) {
+                tagLibFile.tag.album = newAlbumTitle;
             }
 
             tagLibFile.save();
