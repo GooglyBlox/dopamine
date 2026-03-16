@@ -65,12 +65,13 @@ describe('ArtistNameConsistencyChecker', () => {
         return new ArtistNameConsistencyChecker(trackRepositoryMock, albumKeyGeneratorMock, loggerMock);
     }
 
-    function createTrackWithArtists(trackPath, artists, albumArtists) {
+    function createTrackWithArtists(trackPath, artists, albumArtists, trackTitle) {
         const track = new Track(trackPath);
         track.artists = artists || '';
         track.albumArtists = albumArtists || '';
         track.albumTitle = 'Some Album';
         track.albumKey = '';
+        track.trackTitle = trackTitle || '';
         return track;
     }
 
@@ -600,6 +601,91 @@ describe('ArtistNameConsistencyChecker', () => {
                 expect.stringContaining(
                     'Dante Red - Dante Red Complete Works (Bootleg) - 03 himynameisdante.flac',
                 ),
+            );
+        });
+    });
+
+    describe('track title fixing', () => {
+        it('should fix artist name in feat section of track title', () => {
+            const track1 = createTrackWithArtists('/music/glaive - Song1.mp3', ';glaive;', '');
+            const track2 = createTrackWithArtists('/music/glaive - Song2.mp3', ';glaive;', '');
+            const newTrack = createTrackWithArtists(
+                '/music/Lovesickxo - Mixed Signals (feat. Glaive).mp3',
+                ';Lovesickxo;;Glaive;',
+                '',
+                'Mixed Signals (feat. Glaive)',
+            );
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([track1, track2, newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
+                expect.objectContaining({ trackTitle: 'Mixed Signals (feat. glaive)' }),
+            );
+        });
+
+        it('should fix multiple featured artists in track title', () => {
+            const track1 = createTrackWithArtists('/music/21 Savage - Song1.mp3', ';21 Savage;', '');
+            const track2 = createTrackWithArtists('/music/21 Savage - Song2.mp3', ';21 Savage;', '');
+            const track3 = createTrackWithArtists('/music/Ink - Song1.mp3', ';Ink;', '');
+            const track4 = createTrackWithArtists('/music/Ink - Song2.mp3', ';Ink;', '');
+            const newTrack = createTrackWithArtists(
+                '/music/Gambino - Psilocybae (feat. 21 savage, ink).mp3',
+                ';Gambino;;21 savage;;ink;',
+                '',
+                'Psilocybae (feat. 21 savage, ink)',
+            );
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([track1, track2, track3, track4, newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
+                expect.objectContaining({ trackTitle: 'Psilocybae (feat. 21 Savage, Ink)' }),
+            );
+        });
+
+        it('should NOT change artist names outside feat sections in track title', () => {
+            const track1 = createTrackWithArtists('/music/funeral - Song1.mp3', ';funeral;', '');
+            const track2 = createTrackWithArtists('/music/funeral - Song2.mp3', ';funeral;', '');
+            const newTrack = createTrackWithArtists(
+                '/music/OtherArtist - funeral freestyle.mp3',
+                ';OtherArtist;;Funeral;',
+                '',
+                'funeral freestyle',
+            );
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([track1, track2, newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            // Title has no feat section, so "funeral" in the title should stay untouched
+            expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
+                expect.objectContaining({ trackTitle: 'funeral freestyle' }),
+            );
+        });
+
+        it('should handle track title with [with Artist] pattern', () => {
+            const track1 = createTrackWithArtists('/music/Armani White - Song1.mp3', ';Armani White;', '');
+            const track2 = createTrackWithArtists('/music/Armani White - Song2.mp3', ';Armani White;', '');
+            const newTrack = createTrackWithArtists(
+                '/music/Denzel Curry - WISHLIST [with armani white].ogg',
+                ';Denzel Curry;;armani white;',
+                '',
+                'WISHLIST [with armani white]',
+            );
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([track1, track2, newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
+                expect.objectContaining({ trackTitle: 'WISHLIST [with Armani White]' }),
             );
         });
     });
