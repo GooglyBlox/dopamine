@@ -1,5 +1,7 @@
 const { File } = require('@digimezzo/node-taglib-sharp');
 const { DataDelimiter } = require('./data-delimiter');
+const fs = require('fs-extra');
+const path = require('path');
 
 class ArtistNameConsistencyChecker {
     constructor(trackRepository, albumKeyGenerator, logger) {
@@ -135,7 +137,7 @@ class ArtistNameConsistencyChecker {
 
     /**
      * Finds all tracks with inconsistent artist names and fixes them
-     * in both the database and the actual audio file metadata.
+     * in both the database, the actual audio file metadata, and the file name.
      */
     #fixInconsistentTracks(canonicalNames, allTracks) {
         for (const track of allTracks) {
@@ -153,6 +155,9 @@ class ArtistNameConsistencyChecker {
             }
 
             try {
+                // Collect the old->canonical replacements that apply to this track
+                const replacements = this.#collectReplacements(artists, fixedArtists, albumArtists, fixedAlbumArtists);
+
                 // Update the actual file metadata
                 this.#updateFileMetadata(track.path, fixedArtists.names, fixedAlbumArtists.names, artistsChanged, albumArtistsChanged);
 
@@ -170,14 +175,25 @@ class ArtistNameConsistencyChecker {
                     );
                 }
 
+                // Rename the file if any artist names appear in the filename
+                const originalPath = track.path;
+                const newPath = this.#renameFileIfNeeded(track.path, replacements);
+                const fileRenamed = newPath !== originalPath;
+
+                if (fileRenamed) {
+                    track.path = newPath;
+                    track.fileName = path.basename(newPath);
+                }
+
                 this.trackRepository.updateTrack(track);
 
                 const changes = [];
                 if (artistsChanged) changes.push(`artists: "${fixedArtists.names.join(', ')}"`);
                 if (albumArtistsChanged) changes.push(`albumArtists: "${fixedAlbumArtists.names.join(', ')}"`);
+                if (fileRenamed) changes.push(`renamed to: "${path.basename(newPath)}"`);
 
                 this.logger.info(
-                    `Fixed artist name consistency for "${track.path}": ${changes.join(', ')}`,
+                    `Fixed artist name consistency for "${originalPath}": ${changes.join(', ')}`,
                     'ArtistNameConsistencyChecker',
                     'fixInconsistentTracks',
                 );
@@ -232,6 +248,155 @@ class ArtistNameConsistencyChecker {
         } finally {
             tagLibFile.dispose();
         }
+    }
+
+    /**
+     * Collects the old->canonical name replacements for a track by comparing
+     * original and fixed artist arrays.
+     * Returns an array of { old: string, canonical: string } objects.
+     */
+    #collectReplacements(origArtists, fixedArtists, origAlbumArtists, fixedAlbumArtists) {
+        const replacements = new Map(); // lowercased -> { old, canonical }
+
+        for (let i = 0; i < origArtists.length; i++) {
+            if (origArtists[i] !== fixedArtists.names[i]) {
+                replacements.set(origArtists[i].toLowerCase(), {
+                    old: origArtists[i],
+                    canonical: fixedArtists.names[i],
+                });
+            }
+        }
+
+        for (let i = 0; i < origAlbumArtists.length; i++) {
+            if (origAlbumArtists[i] !== fixedAlbumArtists.names[i]) {
+                replacements.set(origAlbumArtists[i].toLowerCase(), {
+                    old: origAlbumArtists[i],
+                    canonical: fixedAlbumArtists.names[i],
+                });
+            }
+        }
+
+        return Array.from(replacements.values());
+    }
+
+    /**
+     * Renames the file on disk if any artist names in the replacements list
+     * appear in the filename. Only replaces in safe positions:
+     *   1. The primary artist section (before the first " - ")
+     *   2. Inside feat/ft/with parenthetical sections in the title
+     * This avoids corrupting song titles that happen to contain artist names.
+     * Returns the new path, or the original path if no rename was needed.
+     */
+    #renameFileIfNeeded(filePath, replacements) {
+        const dir = path.dirname(filePath);
+        const ext = path.extname(filePath);
+        const baseName = path.basename(filePath, ext);
+
+        const newBaseName = this.#replaceArtistNamesInFileName(baseName, replacements);
+
+        if (newBaseName === baseName) {
+            return filePath;
+        }
+
+        const newPath = path.join(dir, newBaseName + ext);
+
+        // Don't rename if the target already exists (and is a genuinely different file).
+        // On case-insensitive filesystems (Windows/macOS), a case-only rename like
+        // "Glaive.flac" -> "glaive.flac" will report existsSync=true for the target
+        // because it's the same file. We must allow those renames through.
+        // Normalize both paths so separator differences (/ vs \) don't break the comparison.
+        const normalizedOld = path.normalize(filePath).toLowerCase();
+        const normalizedNew = path.normalize(newPath).toLowerCase();
+        const isCaseOnlyRename = normalizedOld === normalizedNew;
+
+        if (newPath !== filePath && fs.existsSync(newPath) && !isCaseOnlyRename) {
+            this.logger.warn(
+                `Cannot rename "${filePath}" to "${newPath}" because target already exists`,
+                'ArtistNameConsistencyChecker',
+                'renameFileIfNeeded',
+            );
+            return filePath;
+        }
+
+        fs.renameSync(filePath, newPath);
+
+        this.logger.info(
+            `Renamed file: "${path.basename(filePath)}" -> "${newBaseName}${ext}"`,
+            'ArtistNameConsistencyChecker',
+            'renameFileIfNeeded',
+        );
+
+        return newPath;
+    }
+
+    /**
+     * Replaces artist names in a filename string, only when the filename follows
+     * the "Artist - Title" format. Replacements happen in two safe positions:
+     *   1. The primary artist section (before the first " - ")
+     *   2. Inside feat/ft/with sections in the title (parentheses or brackets)
+     * If the filename doesn't contain " - ", no renaming is attempted.
+     * Returns the modified filename or the original if nothing changed.
+     */
+    #replaceArtistNamesInFileName(baseName, replacements) {
+        const separatorIndex = baseName.indexOf(' - ');
+
+        if (separatorIndex === -1) {
+            // Not in "Artist - Title" format — don't touch it
+            return baseName;
+        }
+
+        let artistPart = baseName.substring(0, separatorIndex);
+        let titlePart = baseName.substring(separatorIndex); // includes " - "
+
+        // 1. Replace in the artist part (before " - ") using whole-word matching
+        for (const { old, canonical } of replacements) {
+            artistPart = this.#replaceWholeWord(artistPart, old, canonical, true);
+        }
+
+        // 2. Replace inside feat/ft/with sections in the title part only
+        titlePart = this.#replaceInFeatSections(titlePart, replacements);
+
+        return artistPart + titlePart;
+    }
+
+    /**
+     * Replaces a whole-word occurrence of `oldName` with `canonical` in `text`.
+     * "Whole word" means the match must not be preceded/followed by a letter or digit,
+     * preventing partial matches like "Red" inside "Redneck" or "Kid" inside "EsDeeKid".
+     * @param {boolean} replaceAll - If true, replaces all occurrences; otherwise just the first.
+     */
+    #replaceWholeWord(text, oldName, canonical, replaceAll) {
+        const escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // Match the name only when it's not surrounded by word characters (letters/digits/underscore).
+        // We use lookahead/lookbehind for boundaries since \b doesn't work well with special chars
+        // like $ or ! that often appear in artist names (e.g. "Joey Bada$", "Autumn!").
+        const flags = replaceAll ? 'gi' : 'i';
+        const regex = new RegExp(`(?<![\\w])${escaped}(?![\\w])`, flags);
+
+        return text.replace(regex, (match) => {
+            if (match !== canonical) {
+                return canonical;
+            }
+            return match;
+        });
+    }
+
+    /**
+     * Finds feat/ft/with sections in the title and replaces artist names within them.
+     * Matches patterns like: (feat. ...), (ft. ...), (with ...), [feat. ...], [with ...],
+     * (FEAT. ...), etc. — case-insensitive.
+     */
+    #replaceInFeatSections(titlePart, replacements) {
+        // Match (feat. ...), (ft. ...), (with ...) and square bracket equivalents
+        const featRegex = /([(\[](?:feat\.?|ft\.?|with)\s)(.*?)([)\]])/gi;
+
+        return titlePart.replace(featRegex, (fullMatch, prefix, artistContent, suffix) => {
+            let fixedContent = artistContent;
+            for (const { old, canonical } of replacements) {
+                fixedContent = this.#replaceWholeWord(fixedContent, old, canonical, true);
+            }
+            return prefix + fixedContent + suffix;
+        });
     }
 
     /**
