@@ -77,7 +77,7 @@ class Ioc {
 
         global.iocContainer.set(
             'ArtistNameConsistencyChecker',
-            new ArtistNameConsistencyChecker(Ioc.get('TrackRepository'), Ioc.get('AlbumKeyGenerator'), Ioc.get('Logger')),
+            new ArtistNameConsistencyChecker(Ioc.get('TrackRepository'), Ioc.get('FolderRepository'), Ioc.get('AlbumKeyGenerator'), Ioc.get('Logger')),
         );
 
         global.iocContainer.set(

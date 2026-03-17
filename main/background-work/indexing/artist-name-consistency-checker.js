@@ -4,8 +4,9 @@ const fs = require('fs-extra');
 const path = require('path');
 
 class ArtistNameConsistencyChecker {
-    constructor(trackRepository, albumKeyGenerator, logger) {
+    constructor(trackRepository, folderRepository, albumKeyGenerator, logger) {
         this.trackRepository = trackRepository;
+        this.folderRepository = folderRepository;
         this.albumKeyGenerator = albumKeyGenerator;
         this.logger = logger;
     }
@@ -25,26 +26,37 @@ class ArtistNameConsistencyChecker {
             // 1. Collect all unique artist names (case-insensitive) from triggering tracks
             const artistNamesToCheck = this.#collectArtistNames(triggeringTracks);
 
-            if (artistNamesToCheck.size === 0) {
-                return;
+            if (artistNamesToCheck.size > 0) {
+                // 2. Get all tracks from the database
+                const allTracks = this.trackRepository.getAllTracks() ?? [];
+
+                // 3. For each artist, determine the canonical capitalization
+                const canonicalNames = this.#determineCanonicalNames(artistNamesToCheck, allTracks);
+
+                // 4. Find and fix all tracks with inconsistent artist names
+                if (canonicalNames.size > 0) {
+                    this.#fixInconsistentTracks(canonicalNames, allTracks);
+                }
             }
-
-            // 2. Get all tracks from the database
-            const allTracks = this.trackRepository.getAllTracks() ?? [];
-
-            // 3. For each artist, determine the canonical capitalization
-            const canonicalNames = this.#determineCanonicalNames(artistNamesToCheck, allTracks);
-
-            if (canonicalNames.size === 0) {
-                return;
-            }
-
-            // 4. Find and fix all tracks with inconsistent artist names
-            this.#fixInconsistentTracks(canonicalNames, allTracks);
         } catch (e) {
             this.logger.error(
                 e,
                 'A problem occurred while checking artist name consistency',
+                'ArtistNameConsistencyChecker',
+                'checkAndFixConsistency',
+            );
+        }
+
+        // 5. Organize triggering tracks into Artist/Album folder structure.
+        //    Re-fetch from DB to pick up any consistency fixes applied above.
+        try {
+            const trackIds = new Set(triggeringTracks.map((t) => t.trackId));
+            const updatedTracks = (this.trackRepository.getAllTracks() ?? []).filter((t) => trackIds.has(t.trackId));
+            this.#organizeIntoArtistFolders(updatedTracks);
+        } catch (e) {
+            this.logger.error(
+                e,
+                'A problem occurred while organizing files into artist folders',
                 'ArtistNameConsistencyChecker',
                 'checkAndFixConsistency',
             );
@@ -447,6 +459,135 @@ class ArtistNameConsistencyChecker {
             .split(';')
             .map((s) => s.trim())
             .filter((s) => s.length > 0);
+    }
+
+    /**
+     * Organizes triggering tracks into Artist/Album folder structure within their
+     * library folder. Creates artist and album directories as needed and moves files.
+     * @param {Array} tracks - The tracks to organize (should be freshly fetched from DB)
+     */
+    #organizeIntoArtistFolders(tracks) {
+        const folders = this.folderRepository.getFolders() ?? [];
+
+        if (folders.length === 0) {
+            return;
+        }
+
+        for (const track of tracks) {
+            try {
+                const libraryFolder = this.#findLibraryFolder(track.path, folders);
+
+                if (!libraryFolder) {
+                    continue;
+                }
+
+                const albumArtists = this.#parseDelimitedString(track.albumArtists);
+                const artists = this.#parseDelimitedString(track.artists);
+                const primaryArtist = albumArtists[0] || artists[0];
+
+                if (!primaryArtist) {
+                    continue;
+                }
+
+                const artistFolder = this.#sanitizeFolderName(primaryArtist);
+                const fileName = path.basename(track.path);
+
+                let destination;
+
+                if (track.albumTitle) {
+                    const albumFolder = this.#sanitizeFolderName(track.albumTitle);
+                    destination = path.join(libraryFolder, artistFolder, albumFolder, fileName);
+                } else {
+                    // Single track — place directly in artist folder
+                    destination = path.join(libraryFolder, artistFolder, fileName);
+                }
+
+                const normalizedSource = path.normalize(track.path);
+                const normalizedDest = path.normalize(destination);
+
+                if (normalizedSource.toLowerCase() === normalizedDest.toLowerCase()) {
+                    continue;
+                }
+
+                if (fs.existsSync(destination)) {
+                    this.logger.warn(
+                        `Cannot move "${track.path}" to "${destination}" because target already exists`,
+                        'ArtistNameConsistencyChecker',
+                        'organizeIntoArtistFolders',
+                    );
+                    continue;
+                }
+
+                fs.mkdirSync(path.dirname(destination), { recursive: true });
+                fs.renameSync(track.path, destination);
+
+                track.path = destination;
+                track.fileName = path.basename(destination);
+                this.trackRepository.updateTrack(track);
+
+                this.logger.info(
+                    `Organized file into artist folder: "${normalizedSource}" -> "${normalizedDest}"`,
+                    'ArtistNameConsistencyChecker',
+                    'organizeIntoArtistFolders',
+                );
+            } catch (e) {
+                this.logger.error(
+                    e,
+                    `Failed to organize file "${track.path}" into artist folder`,
+                    'ArtistNameConsistencyChecker',
+                    'organizeIntoArtistFolders',
+                );
+            }
+        }
+    }
+
+    /**
+     * Finds the library folder that contains the given track path.
+     * Returns the normalized folder path, or null if no match is found.
+     */
+    #findLibraryFolder(trackPath, folders) {
+        const normalized = path.normalize(trackPath).toLowerCase();
+
+        for (const folder of folders) {
+            const folderPath = path.normalize(folder.path).toLowerCase();
+
+            if (normalized.startsWith(folderPath)) {
+                return path.normalize(folder.path);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Sanitizes a string for use as a folder name by removing invalid filesystem characters.
+     */
+    #sanitizeFolderName(name) {
+        if (!name) {
+            return 'Unknown';
+        }
+
+        let sanitized = name;
+        const replacements = {
+            ':': ' -',
+            '/': '-',
+            '\\': '-',
+            '|': '-',
+            '?': '',
+            '*': '',
+            '"': "'",
+            '<': '',
+            '>': '',
+        };
+
+        for (const [char, replacement] of Object.entries(replacements)) {
+            sanitized = sanitized.split(char).join(replacement);
+        }
+
+        sanitized = sanitized.replace(/\s+/g, ' ').trim();
+        sanitized = sanitized.replace(/[. ]+$/, '');
+
+        return sanitized || 'Unknown';
     }
 }
 

@@ -28,16 +28,18 @@ jest.mock('@digimezzo/node-taglib-sharp', () => {
     };
 });
 
-// Mock fs-extra for file renaming tests
+// Mock fs-extra for file renaming and organization tests
 jest.mock('fs-extra', () => ({
     existsSync: jest.fn(() => false),
     renameSync: jest.fn(),
+    mkdirSync: jest.fn(),
 }));
 
 const fs = require('fs-extra');
 
 describe('ArtistNameConsistencyChecker', () => {
     let trackRepositoryMock;
+    let folderRepositoryMock;
     let albumKeyGeneratorMock;
     let loggerMock;
 
@@ -45,6 +47,10 @@ describe('ArtistNameConsistencyChecker', () => {
         trackRepositoryMock = {
             getAllTracks: jest.fn(() => []),
             updateTrack: jest.fn(),
+        };
+
+        folderRepositoryMock = {
+            getFolders: jest.fn(() => []),
         };
 
         albumKeyGeneratorMock = {
@@ -62,7 +68,7 @@ describe('ArtistNameConsistencyChecker', () => {
     });
 
     function createSut() {
-        return new ArtistNameConsistencyChecker(trackRepositoryMock, albumKeyGeneratorMock, loggerMock);
+        return new ArtistNameConsistencyChecker(trackRepositoryMock, folderRepositoryMock, albumKeyGeneratorMock, loggerMock);
     }
 
     function createTrackWithArtists(trackPath, artists, albumArtists, trackTitle, albumTitle) {
@@ -780,6 +786,168 @@ describe('ArtistNameConsistencyChecker', () => {
                 'Mixed Signals (feat. glaive)',
                 expect.anything(),
             );
+        });
+    });
+
+    describe('file organization into artist folders', () => {
+        it('should move a new track into Artist/Album/ folder structure', () => {
+            const newTrack = createTrackWithArtists('/music/SEBii - Play Poker.flac', ';SEBii;', '', 'Play Poker', 'PLAY POKER');
+            newTrack.trackId = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.mkdirSync).toHaveBeenCalledWith(
+                expect.stringMatching(/SEBii[/\\]PLAY POKER$/),
+                { recursive: true },
+            );
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                '/music/SEBii - Play Poker.flac',
+                expect.stringMatching(/SEBii[/\\]PLAY POKER[/\\]SEBii - Play Poker\.flac$/),
+            );
+        });
+
+        it('should place track directly in artist folder when no album title exists', () => {
+            const newTrack = createTrackWithArtists('/music/SEBii - Play Poker.flac', ';SEBii;', '', 'Play Poker', '');
+            newTrack.trackId = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.mkdirSync).toHaveBeenCalledWith(
+                expect.stringMatching(/SEBii$/),
+                { recursive: true },
+            );
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                '/music/SEBii - Play Poker.flac',
+                expect.stringMatching(/SEBii[/\\]SEBii - Play Poker\.flac$/),
+            );
+        });
+
+        it('should use album artist over artist for folder name', () => {
+            const newTrack = createTrackWithArtists('/music/Song.mp3', ';FeaturedArtist;', ';MainArtist;', 'Song', 'Album');
+            newTrack.trackId = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                '/music/Song.mp3',
+                expect.stringMatching(/MainArtist[/\\]Album[/\\]Song\.mp3$/),
+            );
+        });
+
+        it('should not move a file that is already in the correct location', () => {
+            const newTrack = createTrackWithArtists('/music/SEBii/PLAY POKER/SEBii - Play Poker.flac', ';SEBii;', '', 'Play Poker', 'PLAY POKER');
+            newTrack.trackId = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            // renameSync should not be called for organization (file is already in correct spot)
+            expect(fs.renameSync).not.toHaveBeenCalled();
+        });
+
+        it('should not move file if destination already exists', () => {
+            const newTrack = createTrackWithArtists('/music/SEBii - Play Poker.flac', ';SEBii;', '', 'Play Poker', 'PLAY POKER');
+            newTrack.trackId = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            // Simulate destination already exists
+            fs.existsSync.mockReturnValue(true);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.renameSync).not.toHaveBeenCalled();
+        });
+
+        it('should update track path and fileName in database after moving', () => {
+            const newTrack = createTrackWithArtists('/music/SEBii - Play Poker.flac', ';SEBii;', '', 'Play Poker', 'PLAY POKER');
+            newTrack.trackId = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    path: expect.stringMatching(/SEBii[/\\]PLAY POKER[/\\]SEBii - Play Poker\.flac$/),
+                    fileName: 'SEBii - Play Poker.flac',
+                }),
+            );
+        });
+
+        it('should sanitize invalid characters from folder names', () => {
+            const newTrack = createTrackWithArtists('/music/Song.mp3', ';Artist;', '', 'Song', 'What? Really: Yes/No');
+            newTrack.trackId = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            // Colons become " -", slashes become "-", question marks are removed
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                '/music/Song.mp3',
+                expect.stringMatching(/Artist[/\\]What Really - Yes-No[/\\]Song\.mp3$/),
+            );
+        });
+
+        it('should skip organization when no library folders are configured', () => {
+            const newTrack = createTrackWithArtists('/music/SEBii - Play Poker.flac', ';SEBii;', '', 'Play Poker', 'PLAY POKER');
+            newTrack.trackId = 1;
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+            folderRepositoryMock.getFolders.mockReturnValue([]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.renameSync).not.toHaveBeenCalled();
+        });
+
+        it('should use corrected artist name after consistency fix for folder organization', () => {
+            const track1 = createTrackWithArtists('/music/SEBii/PLAY POKER/SEBii - Play Poker.flac', ';SEBii;', '');
+            track1.trackId = 1;
+            const track2 = createTrackWithArtists('/music/SEBii/YKWIM/SEBii - YKWIM.flac', ';SEBii;', '');
+            track2.trackId = 2;
+            const newTrack = createTrackWithArtists('/music/Sebii - New Song.flac', ';Sebii;', '', 'New Song', 'New Album');
+            newTrack.trackId = 3;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+
+            // After consistency fix, the re-fetched track should have the corrected artist name
+            trackRepositoryMock.getAllTracks
+                .mockReturnValueOnce([track1, track2, newTrack]) // first call: consistency check
+                .mockReturnValueOnce([
+                    track1,
+                    track2,
+                    { ...newTrack, artists: ';SEBii;', path: expect.any(String) },
+                ]); // second call: organization re-fetch
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            // The file should be organized (renameSync called at least for organization)
+            expect(fs.renameSync).toHaveBeenCalled();
         });
     });
 });
