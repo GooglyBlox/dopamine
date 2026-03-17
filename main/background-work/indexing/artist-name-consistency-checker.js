@@ -473,6 +473,10 @@ class ArtistNameConsistencyChecker {
             return;
         }
 
+        // Track which source directories had files moved out, and where they went.
+        // Key: normalized source dir (lowercase), Value: destination dir
+        const movedFromTo = new Map();
+
         for (const track of tracks) {
             try {
                 const libraryFolder = this.#findLibraryFolder(track.path, folders);
@@ -518,12 +522,17 @@ class ArtistNameConsistencyChecker {
                     continue;
                 }
 
-                fs.mkdirSync(path.dirname(destination), { recursive: true });
+                const sourceDir = path.dirname(normalizedSource);
+                const destDir = path.dirname(normalizedDest);
+
+                fs.mkdirSync(destDir, { recursive: true });
                 fs.renameSync(track.path, destination);
 
                 track.path = destination;
                 track.fileName = path.basename(destination);
                 this.trackRepository.updateTrack(track);
+
+                movedFromTo.set(sourceDir.toLowerCase(), { sourceDir, destDir });
 
                 this.logger.info(
                     `Organized file into artist folder: "${normalizedSource}" -> "${normalizedDest}"`,
@@ -537,6 +546,119 @@ class ArtistNameConsistencyChecker {
                     'ArtistNameConsistencyChecker',
                     'organizeIntoArtistFolders',
                 );
+            }
+        }
+
+        // Move companion files (covers, playlists, etc.) left behind in source folders
+        this.#moveCompanionFiles(movedFromTo, folders);
+    }
+
+    /**
+     * Moves non-audio companion files (cover art, playlists, etc.) from source
+     * directories where audio files were moved out, then removes empty directories.
+     * @param {Map} movedFromTo - Map of lowercase source dir -> { sourceDir, destDir }
+     * @param {Array} folders - Library folders from the folder repository
+     */
+    #moveCompanionFiles(movedFromTo, folders) {
+        for (const { sourceDir, destDir } of movedFromTo.values()) {
+            try {
+                if (!fs.existsSync(sourceDir)) {
+                    continue;
+                }
+
+                const remaining = fs.readdirSync(sourceDir);
+
+                for (const fileName of remaining) {
+                    const sourcePath = path.join(sourceDir, fileName);
+
+                    // Skip directories — only move files
+                    if (fs.statSync(sourcePath).isDirectory()) {
+                        continue;
+                    }
+
+                    const destPath = path.join(destDir, fileName);
+
+                    if (fs.existsSync(destPath)) {
+                        this.logger.warn(
+                            `Cannot move companion file "${sourcePath}" to "${destPath}" because target already exists`,
+                            'ArtistNameConsistencyChecker',
+                            'moveCompanionFiles',
+                        );
+                        continue;
+                    }
+
+                    fs.renameSync(sourcePath, destPath);
+
+                    this.logger.info(
+                        `Moved companion file: "${sourcePath}" -> "${destPath}"`,
+                        'ArtistNameConsistencyChecker',
+                        'moveCompanionFiles',
+                    );
+                }
+            } catch (e) {
+                this.logger.error(
+                    e,
+                    `Failed to move companion files from "${sourceDir}"`,
+                    'ArtistNameConsistencyChecker',
+                    'moveCompanionFiles',
+                );
+            }
+        }
+
+        // Remove empty directories left behind within library folders
+        this.#removeEmptyDirectories(movedFromTo, folders);
+    }
+
+    /**
+     * Removes empty directories left behind after files were moved.
+     * Walks from deepest to shallowest, stopping at the library folder root.
+     * @param {Map} movedFromTo - Map of lowercase source dir -> { sourceDir, destDir }
+     * @param {Array} folders - Library folders from the folder repository
+     */
+    #removeEmptyDirectories(movedFromTo, folders) {
+        for (const { sourceDir } of movedFromTo.values()) {
+            let current = sourceDir;
+
+            while (current) {
+                try {
+                    // Don't remove the library root folder itself
+                    const isLibraryRoot = folders.some(
+                        (f) => path.normalize(f.path).toLowerCase() === current.toLowerCase(),
+                    );
+
+                    if (isLibraryRoot) {
+                        break;
+                    }
+
+                    if (!fs.existsSync(current)) {
+                        current = path.dirname(current);
+                        continue;
+                    }
+
+                    const contents = fs.readdirSync(current);
+
+                    if (contents.length > 0) {
+                        break;
+                    }
+
+                    fs.rmdirSync(current);
+
+                    this.logger.info(
+                        `Removed empty directory: "${current}"`,
+                        'ArtistNameConsistencyChecker',
+                        'removeEmptyDirectories',
+                    );
+
+                    current = path.dirname(current);
+                } catch (e) {
+                    this.logger.error(
+                        e,
+                        `Failed to remove empty directory "${current}"`,
+                        'ArtistNameConsistencyChecker',
+                        'removeEmptyDirectories',
+                    );
+                    break;
+                }
             }
         }
     }

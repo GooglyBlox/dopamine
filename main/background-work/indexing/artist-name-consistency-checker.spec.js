@@ -33,6 +33,9 @@ jest.mock('fs-extra', () => ({
     existsSync: jest.fn(() => false),
     renameSync: jest.fn(),
     mkdirSync: jest.fn(),
+    readdirSync: jest.fn(() => []),
+    statSync: jest.fn(() => ({ isDirectory: () => false })),
+    rmdirSync: jest.fn(),
 }));
 
 const fs = require('fs-extra');
@@ -948,6 +951,119 @@ describe('ArtistNameConsistencyChecker', () => {
 
             // The file should be organized (renameSync called at least for organization)
             expect(fs.renameSync).toHaveBeenCalled();
+        });
+
+        it('should move companion files (cover, m3u) from source folder to destination', () => {
+            const newTrack = createTrackWithArtists('/music/JayJayMf - BatLyfe 2/01. Song.flac', ';JayJayMf;', '', 'Song', 'BatLyfe 2');
+            newTrack.trackId = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            // After the audio file is moved, the source folder still has companion files
+            fs.existsSync.mockImplementation((p) => {
+                const normalized = require('path').normalize(p).toLowerCase();
+                // Source directory exists when checking for companion files
+                if (normalized.includes('jayjaymf - batlyfe 2')) {
+                    return true;
+                }
+                return false;
+            });
+
+            fs.readdirSync.mockImplementation((dir) => {
+                const normalized = require('path').normalize(dir).toLowerCase();
+                if (normalized.includes('jayjaymf - batlyfe 2')) {
+                    return ['cover.jpg', 'playlist.m3u'];
+                }
+                return [];
+            });
+
+            fs.statSync.mockReturnValue({ isDirectory: () => false });
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            // Should move the companion files
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                expect.stringMatching(/JayJayMf - BatLyfe 2[/\\]cover\.jpg$/),
+                expect.stringMatching(/JayJayMf[/\\]BatLyfe 2[/\\]cover\.jpg$/),
+            );
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                expect.stringMatching(/JayJayMf - BatLyfe 2[/\\]playlist\.m3u$/),
+                expect.stringMatching(/JayJayMf[/\\]BatLyfe 2[/\\]playlist\.m3u$/),
+            );
+        });
+
+        it('should remove empty source directory after moving all files', () => {
+            const newTrack = createTrackWithArtists('/music/JayJayMf - BatLyfe 2/01. Song.flac', ';JayJayMf;', '', 'Song', 'BatLyfe 2');
+            newTrack.trackId = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sourceDirNormalized = require('path').normalize('/music/JayJayMf - BatLyfe 2').toLowerCase();
+
+            fs.existsSync.mockImplementation((p) => {
+                const normalized = require('path').normalize(p).toLowerCase();
+                if (normalized === sourceDirNormalized) {
+                    return true;
+                }
+                return false;
+            });
+
+            // Source dir is empty after companion files moved (no companion files in this test)
+            fs.readdirSync.mockReturnValue([]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            // Should remove the empty source directory
+            expect(fs.rmdirSync).toHaveBeenCalledWith(
+                expect.stringMatching(/JayJayMf - BatLyfe 2$/),
+            );
+        });
+
+        it('should not remove source directory if it still contains files', () => {
+            const newTrack = createTrackWithArtists('/music/JayJayMf - BatLyfe 2/01. Song.flac', ';JayJayMf;', '', 'Song', 'BatLyfe 2');
+            newTrack.trackId = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            fs.existsSync.mockImplementation((p) => {
+                const normalized = require('path').normalize(p).toLowerCase();
+                if (normalized.includes('jayjaymf - batlyfe 2')) {
+                    return true;
+                }
+                return false;
+            });
+
+            // Source dir still has files that couldn't be moved
+            fs.readdirSync.mockReturnValue(['stuck-file.txt']);
+            fs.statSync.mockReturnValue({ isDirectory: () => false });
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            // Should NOT remove the directory since it still has contents after companion move attempt
+            expect(fs.rmdirSync).not.toHaveBeenCalled();
+        });
+
+        it('should not remove the library root folder', () => {
+            const newTrack = createTrackWithArtists('/music/Song.flac', ';Artist;', '', 'Song', 'Album');
+            newTrack.trackId = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            fs.existsSync.mockReturnValue(true);
+            fs.readdirSync.mockReturnValue([]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            // Should never remove the library root
+            expect(fs.rmdirSync).not.toHaveBeenCalled();
         });
     });
 });
