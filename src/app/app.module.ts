@@ -169,6 +169,7 @@ import { ApplicationService } from './services/application/application.service';
 import { ArtistInformationFactory } from './services/artist-information/artist-information-factory';
 import { ArtistInformationService } from './services/artist-information/artist-information.service';
 import { ArtistService } from './services/artist/artist.service';
+import { ArtistRenameService } from './services/artist/artist-rename.service';
 import { CollectionService } from './services/collection/collection.service';
 import { DialogService } from './services/dialog/dialog.service';
 import { ElectronService } from './services/electron.service';
@@ -573,6 +574,7 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         ExternalArtworkPathGetter,
         IndexingService,
         DuplicateDetectionService,
+        ArtistRenameService,
         { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: CustomTooltipDefaults },
         { provide: FileAccessBase, useClass: FileAccess },
         { provide: TrackRepositoryBase, useClass: TrackRepository },

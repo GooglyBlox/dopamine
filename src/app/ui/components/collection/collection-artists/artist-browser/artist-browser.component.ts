@@ -21,6 +21,9 @@ import { ArtistSorter } from '../../../../../common/sorting/artist-sorter';
 import { Timer } from '../../../../../common/scheduling/timer';
 import { TrackServiceBase } from '../../../../../services/track/track.service.base';
 import { TrackModels } from '../../../../../services/track/track-models';
+import { DialogServiceBase } from '../../../../../services/dialog/dialog.service.base';
+import { ArtistRenameService } from '../../../../../services/artist/artist-rename.service';
+import { TranslatorServiceBase } from '../../../../../services/translator/translator.service.base';
 
 @Component({
     selector: 'app-artist-browser',
@@ -54,6 +57,9 @@ export class ArtistBrowserComponent implements OnInit, OnDestroy {
         private semanticZoomHeaderAdder: SemanticZoomHeaderAdder,
         private scheduler: SchedulerBase,
         private logger: Logger,
+        private dialogService: DialogServiceBase,
+        private artistRenameService: ArtistRenameService,
+        private translatorService: TranslatorServiceBase,
     ) {}
 
     public shouldZoomOut: boolean = false;
@@ -151,6 +157,25 @@ export class ArtistBrowserComponent implements OnInit, OnDestroy {
 
         this.playbackService.forceShuffled();
         await this.playbackService.enqueueAndPlayArtistAsync(artist, this.selectedArtistType);
+    }
+
+    public async onRenameArtistAsync(artist: ArtistModel): Promise<void> {
+        if (artist == undefined) {
+            return;
+        }
+
+        const dialogTitle = await this.translatorService.getAsync('rename-artist');
+        const newName = await this.dialogService.showInputDialogAsync(dialogTitle, artist.name, artist.name, []);
+
+        if (!newName || newName === artist.name) {
+            return;
+        }
+
+        try {
+            await this.artistRenameService.renameArtistAsync(artist.name, newName);
+        } catch (e: unknown) {
+            this.logger.error(e, 'Failed to rename artist', 'ArtistBrowserComponent', 'onRenameArtistAsync');
+        }
     }
 
     private orderArtists(): void {
