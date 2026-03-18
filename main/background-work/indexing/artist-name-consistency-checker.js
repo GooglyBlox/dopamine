@@ -47,8 +47,23 @@ class ArtistNameConsistencyChecker {
             );
         }
 
-        // 5. Organize triggering tracks into Artist/Album folder structure.
-        //    Re-fetch from DB to pick up any consistency fixes applied above.
+        // 5. Strip (feat. ...) and (ft. ...) from track titles, album titles,
+        //    filenames, and folder names for triggering tracks.
+        try {
+            const trackIds = new Set(triggeringTracks.map((t) => t.trackId));
+            const updatedTracks = (this.trackRepository.getAllTracks() ?? []).filter((t) => trackIds.has(t.trackId));
+            this.#stripFeatFromTracks(updatedTracks);
+        } catch (e) {
+            this.logger.error(
+                e,
+                'A problem occurred while stripping feat/ft from tracks',
+                'ArtistNameConsistencyChecker',
+                'checkAndFixConsistency',
+            );
+        }
+
+        // 6. Organize triggering tracks into Artist/Album folder structure.
+        //    Re-fetch from DB to pick up any fixes applied above.
         try {
             const trackIds = new Set(triggeringTracks.map((t) => t.trackId));
             const updatedTracks = (this.trackRepository.getAllTracks() ?? []).filter((t) => trackIds.has(t.trackId));
@@ -57,6 +72,21 @@ class ArtistNameConsistencyChecker {
             this.logger.error(
                 e,
                 'A problem occurred while organizing files into artist folders',
+                'ArtistNameConsistencyChecker',
+                'checkAndFixConsistency',
+            );
+        }
+
+        // 7. Rename triggering tracks to Artist - Album - Track# - Title format.
+        //    Re-fetch from DB to pick up folder organization changes.
+        try {
+            const trackIds = new Set(triggeringTracks.map((t) => t.trackId));
+            const updatedTracks = (this.trackRepository.getAllTracks() ?? []).filter((t) => trackIds.has(t.trackId));
+            this.#renameToStandardFormat(updatedTracks);
+        } catch (e) {
+            this.logger.error(
+                e,
+                'A problem occurred while renaming tracks to standard format',
                 'ArtistNameConsistencyChecker',
                 'checkAndFixConsistency',
             );
@@ -459,6 +489,230 @@ class ArtistNameConsistencyChecker {
             .split(';')
             .map((s) => s.trim())
             .filter((s) => s.length > 0);
+    }
+
+    /**
+     * Strips (feat. ...) and (ft. ...) from track titles, album titles, filenames,
+     * and parent folder names for the given tracks. Updates metadata, database, and disk.
+     * Does NOT strip (with ...) — those are typically relevant to the song identity.
+     */
+    #stripFeatFromTracks(tracks) {
+        const folders = this.folderRepository.getFolders() ?? [];
+
+        for (const track of tracks) {
+            try {
+                const originalTitle = track.trackTitle || '';
+                const originalAlbumTitle = track.albumTitle || '';
+
+                const strippedTitle = this.#stripFeatSection(originalTitle);
+                const strippedAlbumTitle = this.#stripFeatSection(originalAlbumTitle);
+
+                const titleChanged = strippedTitle !== originalTitle;
+                const albumTitleChanged = strippedAlbumTitle !== originalAlbumTitle;
+
+                if (!titleChanged && !albumTitleChanged) {
+                    // Also check filename and folder name
+                    const fileStripped = this.#stripFeatFromFile(track, folders);
+                    if (!fileStripped) {
+                        continue;
+                    }
+                    // File/folder was renamed but metadata didn't change — still need to persist
+                    this.trackRepository.updateTrack(track);
+                    continue;
+                }
+
+                // Update file metadata
+                const tagLibFile = File.createFromPath(track.path);
+                try {
+                    if (titleChanged) {
+                        tagLibFile.tag.title = strippedTitle;
+                    }
+                    if (albumTitleChanged) {
+                        tagLibFile.tag.album = strippedAlbumTitle;
+                    }
+                    tagLibFile.save();
+                } finally {
+                    tagLibFile.dispose();
+                }
+
+                // Update database record
+                if (titleChanged) {
+                    track.trackTitle = strippedTitle;
+                }
+                if (albumTitleChanged) {
+                    track.albumTitle = strippedAlbumTitle;
+                    track.albumKey = this.albumKeyGenerator.generateAlbumKey(
+                        track.albumTitle,
+                        this.#parseDelimitedString(track.albumArtists),
+                    );
+                }
+
+                // Strip feat from filename and folder name on disk
+                this.#stripFeatFromFile(track, folders);
+
+                this.trackRepository.updateTrack(track);
+
+                const changes = [];
+                if (titleChanged) changes.push(`title: "${strippedTitle}"`);
+                if (albumTitleChanged) changes.push(`albumTitle: "${strippedAlbumTitle}"`);
+
+                this.logger.info(
+                    `Stripped feat/ft from "${track.path}": ${changes.join(', ')}`,
+                    'ArtistNameConsistencyChecker',
+                    'stripFeatFromTracks',
+                );
+            } catch (e) {
+                this.logger.error(
+                    e,
+                    `Failed to strip feat/ft from "${track.path}"`,
+                    'ArtistNameConsistencyChecker',
+                    'stripFeatFromTracks',
+                );
+            }
+        }
+    }
+
+    /**
+     * Removes (feat. ...) and (ft. ...) sections from a string.
+     * Preserves (with ...) sections as those are typically part of the song identity.
+     */
+    #stripFeatSection(text) {
+        if (!text) {
+            return text;
+        }
+        return text.replace(/\s*[(\[]\s*(?:feat\.?|ft\.?)\s+[^)\]]+[)\]]/gi, '').trim();
+    }
+
+    /**
+     * Strips (feat. ...) and (ft. ...) from a track's filename and its parent folder name.
+     * Returns true if any rename happened.
+     */
+    #stripFeatFromFile(track, folders) {
+        let changed = false;
+
+        // Strip from filename
+        const dir = path.dirname(track.path);
+        const ext = path.extname(track.path);
+        const baseName = path.basename(track.path, ext);
+        const strippedBaseName = this.#stripFeatSection(baseName);
+
+        if (strippedBaseName !== baseName) {
+            const newPath = path.join(dir, strippedBaseName + ext);
+            if (!fs.existsSync(newPath) || path.normalize(newPath).toLowerCase() === path.normalize(track.path).toLowerCase()) {
+                fs.renameSync(track.path, newPath);
+                track.path = newPath;
+                track.fileName = path.basename(newPath);
+                changed = true;
+
+                this.logger.info(
+                    `Stripped feat from filename: "${baseName}${ext}" -> "${strippedBaseName}${ext}"`,
+                    'ArtistNameConsistencyChecker',
+                    'stripFeatFromFile',
+                );
+            }
+        }
+
+        // Strip from parent folder name
+        const parentDir = path.dirname(track.path);
+        const parentName = path.basename(parentDir);
+        const strippedParentName = this.#stripFeatSection(parentName);
+
+        if (strippedParentName !== parentName) {
+            const libraryFolder = this.#findLibraryFolder(track.path, folders);
+            if (libraryFolder && path.normalize(parentDir).toLowerCase() !== path.normalize(libraryFolder).toLowerCase()) {
+                const newParentDir = path.join(path.dirname(parentDir), strippedParentName);
+                if (!fs.existsSync(newParentDir)) {
+                    fs.renameSync(parentDir, newParentDir);
+                    track.path = path.join(newParentDir, path.basename(track.path));
+                    changed = true;
+
+                    this.logger.info(
+                        `Stripped feat from folder: "${parentName}" -> "${strippedParentName}"`,
+                        'ArtistNameConsistencyChecker',
+                        'stripFeatFromFile',
+                    );
+                }
+            }
+        }
+
+        return changed;
+    }
+
+    /**
+     * Renames tracks to the standard format: Artist - Album - TrackNum - Title.ext
+     * or Artist - Album - Title.ext if no track number is available.
+     */
+    #renameToStandardFormat(tracks) {
+        for (const track of tracks) {
+            try {
+                const albumArtists = this.#parseDelimitedString(track.albumArtists);
+                const artists = this.#parseDelimitedString(track.artists);
+                const primaryArtist = albumArtists[0] || artists[0];
+
+                if (!primaryArtist || !track.albumTitle) {
+                    continue;
+                }
+
+                const title = track.trackTitle;
+                if (!title) {
+                    continue;
+                }
+
+                const ext = path.extname(track.path);
+                const parts = [
+                    this.#sanitizeFolderName(primaryArtist),
+                    this.#sanitizeFolderName(track.albumTitle),
+                ];
+
+                if (track.trackNumber > 0) {
+                    parts.push(String(track.trackNumber).padStart(2, '0'));
+                }
+
+                parts.push(this.#sanitizeFolderName(title));
+
+                const newBaseName = parts.join(' - ');
+                const dir = path.dirname(track.path);
+                const newPath = path.join(dir, newBaseName + ext);
+
+                const normalizedOld = path.normalize(track.path).toLowerCase();
+                const normalizedNew = path.normalize(newPath).toLowerCase();
+
+                if (normalizedOld === normalizedNew) {
+                    continue;
+                }
+
+                const isCaseOnlyRename = normalizedOld === normalizedNew;
+
+                if (fs.existsSync(newPath) && !isCaseOnlyRename) {
+                    this.logger.warn(
+                        `Cannot rename to standard format: "${track.path}" -> "${newPath}" because target already exists`,
+                        'ArtistNameConsistencyChecker',
+                        'renameToStandardFormat',
+                    );
+                    continue;
+                }
+
+                fs.renameSync(track.path, newPath);
+
+                const oldName = path.basename(track.path);
+                track.path = newPath;
+                track.fileName = path.basename(newPath);
+                this.trackRepository.updateTrack(track);
+
+                this.logger.info(
+                    `Renamed to standard format: "${oldName}" -> "${track.fileName}"`,
+                    'ArtistNameConsistencyChecker',
+                    'renameToStandardFormat',
+                );
+            } catch (e) {
+                this.logger.error(
+                    e,
+                    `Failed to rename "${track.path}" to standard format`,
+                    'ArtistNameConsistencyChecker',
+                    'renameToStandardFormat',
+                );
+            }
+        }
     }
 
     /**

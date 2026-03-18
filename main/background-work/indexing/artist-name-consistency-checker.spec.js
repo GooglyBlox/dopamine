@@ -7,17 +7,21 @@ jest.mock('@digimezzo/node-taglib-sharp', () => {
     const savedFiles = {};
     return {
         File: {
-            createFromPath: jest.fn((path) => {
+            createFromPath: jest.fn((filePath) => {
                 const tag = {
                     performers: [],
                     albumArtists: [],
+                    title: undefined,
+                    album: undefined,
                 };
                 return {
                     tag,
                     save: jest.fn(() => {
-                        savedFiles[path] = {
+                        savedFiles[filePath] = {
                             performers: [...tag.performers],
                             albumArtists: [...tag.albumArtists],
+                            title: tag.title,
+                            album: tag.album,
                         };
                     }),
                     dispose: jest.fn(),
@@ -615,7 +619,7 @@ describe('ArtistNameConsistencyChecker', () => {
     });
 
     describe('track title fixing', () => {
-        it('should fix artist name in feat section of track title', () => {
+        it('should fix artist name in feat section of track title then strip feat', () => {
             const track1 = createTrackWithArtists('/music/glaive - Song1.mp3', ';glaive;', '');
             const track2 = createTrackWithArtists('/music/glaive - Song2.mp3', ';glaive;', '');
             const newTrack = createTrackWithArtists(
@@ -630,12 +634,13 @@ describe('ArtistNameConsistencyChecker', () => {
             const sut = createSut();
             sut.checkAndFixConsistency([newTrack]);
 
+            // Consistency fix changes (feat. Glaive) -> (feat. glaive), then feat stripping removes it
             expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
-                expect.objectContaining({ trackTitle: 'Mixed Signals (feat. glaive)' }),
+                expect.objectContaining({ trackTitle: 'Mixed Signals' }),
             );
         });
 
-        it('should fix multiple featured artists in track title', () => {
+        it('should fix multiple featured artists in track title then strip feat', () => {
             const track1 = createTrackWithArtists('/music/21 Savage - Song1.mp3', ';21 Savage;', '');
             const track2 = createTrackWithArtists('/music/21 Savage - Song2.mp3', ';21 Savage;', '');
             const track3 = createTrackWithArtists('/music/Ink - Song1.mp3', ';Ink;', '');
@@ -652,8 +657,9 @@ describe('ArtistNameConsistencyChecker', () => {
             const sut = createSut();
             sut.checkAndFixConsistency([newTrack]);
 
+            // Consistency fix changes feat names, then feat stripping removes the section
             expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
-                expect.objectContaining({ trackTitle: 'Psilocybae (feat. 21 Savage, Ink)' }),
+                expect.objectContaining({ trackTitle: 'Psilocybae' }),
             );
         });
 
@@ -716,10 +722,12 @@ describe('ArtistNameConsistencyChecker', () => {
             const sut = createSut();
             sut.checkAndFixConsistency([newTrack]);
 
+            // After consistency fix, feat. section has corrected artist name,
+            // then feat stripping removes it entirely
             expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    trackTitle: 'Mixed Signals (feat. glaive)',
-                    albumTitle: 'Mixed Signals (feat. glaive)',
+                    trackTitle: 'Mixed Signals',
+                    albumTitle: 'Mixed Signals',
                 }),
             );
         });
@@ -740,10 +748,12 @@ describe('ArtistNameConsistencyChecker', () => {
             const sut = createSut();
             sut.checkAndFixConsistency([newTrack]);
 
+            // After consistency fix, feat. section has corrected artist name,
+            // then feat stripping removes it entirely
             expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
                 expect.objectContaining({
                     trackTitle: 'Mixed Signals',
-                    albumTitle: 'Mixed Signals (feat. glaive)',
+                    albumTitle: 'Mixed Signals',
                 }),
             );
         });
@@ -850,7 +860,7 @@ describe('ArtistNameConsistencyChecker', () => {
         });
 
         it('should not move a file that is already in the correct location', () => {
-            const newTrack = createTrackWithArtists('/music/SEBii/PLAY POKER/SEBii - Play Poker.flac', ';SEBii;', '', 'Play Poker', 'PLAY POKER');
+            const newTrack = createTrackWithArtists('/music/SEBii/PLAY POKER/SEBii - PLAY POKER - Play Poker.flac', ';SEBii;', '', 'Play Poker', 'PLAY POKER');
             newTrack.trackId = 1;
 
             folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
@@ -891,8 +901,8 @@ describe('ArtistNameConsistencyChecker', () => {
 
             expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    path: expect.stringMatching(/SEBii[/\\]PLAY POKER[/\\]SEBii - Play Poker\.flac$/),
-                    fileName: 'SEBii - Play Poker.flac',
+                    path: expect.stringMatching(/SEBii[/\\]PLAY POKER[/\\]SEBii - PLAY POKER - Play Poker\.flac$/),
+                    fileName: 'SEBii - PLAY POKER - Play Poker.flac',
                 }),
             );
         });
@@ -915,7 +925,7 @@ describe('ArtistNameConsistencyChecker', () => {
         });
 
         it('should skip organization when no library folders are configured', () => {
-            const newTrack = createTrackWithArtists('/music/SEBii - Play Poker.flac', ';SEBii;', '', 'Play Poker', 'PLAY POKER');
+            const newTrack = createTrackWithArtists('/music/SEBii - PLAY POKER - Play Poker.flac', ';SEBii;', '', 'Play Poker', 'PLAY POKER');
             newTrack.trackId = 1;
 
             trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
@@ -924,6 +934,7 @@ describe('ArtistNameConsistencyChecker', () => {
             const sut = createSut();
             sut.checkAndFixConsistency([newTrack]);
 
+            // No organization (no folders) and file already in standard format
             expect(fs.renameSync).not.toHaveBeenCalled();
         });
 
@@ -1064,6 +1075,272 @@ describe('ArtistNameConsistencyChecker', () => {
 
             // Should never remove the library root
             expect(fs.rmdirSync).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('feat/ft stripping', () => {
+        it('should strip (feat. ...) from track title in metadata and database', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Artist/Album/Artist - Album - 01 - Song (feat. Other).flac',
+                ';Artist;',
+                '',
+                'Song (feat. Other)',
+                'Album',
+            );
+            newTrack.trackId = 1;
+            newTrack.trackNumber = 1;
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
+                expect.objectContaining({ trackTitle: 'Song' }),
+            );
+        });
+
+        it('should strip (ft. ...) from track title', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Artist/Album/Song.flac',
+                ';Artist;',
+                '',
+                'Song (ft. Other)',
+                'Album',
+            );
+            newTrack.trackId = 1;
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
+                expect.objectContaining({ trackTitle: 'Song' }),
+            );
+        });
+
+        it('should strip (feat. ...) from album title and recalculate albumKey', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Artist/Album/Song.flac',
+                ';Artist;',
+                ';Artist;',
+                'Song',
+                'My Album (feat. Someone)',
+            );
+            newTrack.trackId = 1;
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
+                expect.objectContaining({ albumTitle: 'My Album' }),
+            );
+            expect(albumKeyGeneratorMock.generateAlbumKey).toHaveBeenCalledWith('My Album', expect.anything());
+        });
+
+        it('should NOT strip (with ...) from titles', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Artist/Album/Song.flac',
+                ';Artist;',
+                '',
+                'Song (with Other)',
+                'Album',
+            );
+            newTrack.trackId = 1;
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            // Title should remain unchanged — (with ...) is preserved
+            const updateCalls = trackRepositoryMock.updateTrack.mock.calls;
+            const titleUpdates = updateCalls.filter((c) => c[0].trackTitle !== undefined);
+            for (const call of titleUpdates) {
+                expect(call[0].trackTitle).toBe('Song (with Other)');
+            }
+        });
+
+        it('should strip (feat. ...) from filename on disk', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Artist/Album/Artist - Album - 01 - Song (feat. Other).flac',
+                ';Artist;',
+                '',
+                'Song (feat. Other)',
+                'Album',
+            );
+            newTrack.trackId = 1;
+            newTrack.trackNumber = 1;
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                '/music/Artist/Album/Artist - Album - 01 - Song (feat. Other).flac',
+                expect.stringContaining('Artist - Album - 01 - Song.flac'),
+            );
+        });
+
+        it('should not modify tracks without feat/ft in title', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Artist/Album/Artist - Album - Song (with Other).flac',
+                ';Artist;',
+                '',
+                'Song (with Other)',
+                'Album',
+            );
+            newTrack.trackId = 1;
+
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            // No feat/ft to strip, file already in standard format — no changes expected
+            expect(trackRepositoryMock.updateTrack).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('standard format renaming', () => {
+        it('should rename file to Artist - Album - TrackNum - Title format', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Artist/Album/01. Song.flac',
+                ';Artist;',
+                '',
+                'Song',
+                'Album',
+            );
+            newTrack.trackId = 1;
+            newTrack.trackNumber = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.stringContaining('Artist - Album - 01 - Song.flac'),
+            );
+        });
+
+        it('should omit track number when not available', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Artist/Album/Song.flac',
+                ';Artist;',
+                '',
+                'Song',
+                'Album',
+            );
+            newTrack.trackId = 1;
+            newTrack.trackNumber = 0;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.stringContaining('Artist - Album - Song.flac'),
+            );
+        });
+
+        it('should use album artist for filename when available', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/MainArtist/Album/01. Song.flac',
+                ';FeaturedArtist;',
+                ';MainArtist;',
+                'Song',
+                'Album',
+            );
+            newTrack.trackId = 1;
+            newTrack.trackNumber = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.stringContaining('MainArtist - Album - 01 - Song.flac'),
+            );
+        });
+
+        it('should not rename if already in correct format', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Artist/Album/Artist - Album - 01 - Song.flac',
+                ';Artist;',
+                '',
+                'Song',
+                'Album',
+            );
+            newTrack.trackId = 1;
+            newTrack.trackNumber = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.renameSync).not.toHaveBeenCalled();
+        });
+
+        it('should pad track numbers to 2 digits', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Artist/Album/5. Song.flac',
+                ';Artist;',
+                '',
+                'Song',
+                'Album',
+            );
+            newTrack.trackId = 1;
+            newTrack.trackNumber = 5;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.stringContaining('Artist - Album - 05 - Song.flac'),
+            );
+        });
+
+        it('should update track path and fileName in database after renaming', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Artist/Album/01. Song.flac',
+                ';Artist;',
+                '',
+                'Song',
+                'Album',
+            );
+            newTrack.trackId = 1;
+            newTrack.trackNumber = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(trackRepositoryMock.updateTrack).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    fileName: 'Artist - Album - 01 - Song.flac',
+                }),
+            );
         });
     });
 });
