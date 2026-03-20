@@ -183,6 +183,8 @@ import { PlaybackIndicationService } from './services/playback-indication/playba
 import { PlaylistFolderModelFactory } from './services/playlist-folder/playlist-folder-model-factory';
 import { PlaylistFolderService } from './services/playlist-folder/playlist-folder.service';
 import { PlaylistDecoder } from './services/playlist/playlist-decoder';
+import { SmartPlaylistParser } from './services/playlist/smart-playlist-parser';
+import { SmartPlaylistQueryBuilder } from './services/playlist/smart-playlist-query-builder';
 import { PlaylistFileManager } from './services/playlist/playlist-file-manager';
 import { PlaylistModelFactory } from './services/playlist/playlist-model-factory';
 import { PlaylistService } from './services/playlist/playlist.service';
@@ -299,6 +301,7 @@ import { AlbumPlaceholderComponent } from './ui/components/highlights/album-plac
 import { DuplicateTracksDialogComponent } from './ui/components/dialogs/duplicate-tracks-dialog/duplicate-tracks-dialog.component';
 import { DuplicateDetectionService } from './services/duplicate/duplicate-detection.service';
 import { CollectionRecommendationsComponent } from './ui/components/collection/collection-recommendations/collection-recommendations.component';
+import { EditSmartPlaylistDialogComponent } from './ui/components/dialogs/edit-smart-playlist-dialog/edit-smart-playlist-dialog.component';
 
 export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
     return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -427,6 +430,7 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         PlaylistBrowserComponent,
         PlaylistComponent,
         EditPlaylistDialogComponent,
+        EditSmartPlaylistDialogComponent,
         PlaylistTrackBrowserComponent,
         RatingComponent,
         LoveComponent,
@@ -553,6 +557,8 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         AddToPlaylistMenu,
         TrackModelFactory,
         PlaylistDecoder,
+        SmartPlaylistParser,
+        SmartPlaylistQueryBuilder,
         FileValidator,
         DateProxy,
         DateTime,

@@ -363,5 +363,20 @@
     "recommendations-tempo-match": "Tempo Match",
     "recommendations-tempo-match-description": "Songs with a similar BPM to what you've been playing",
     "recommendations-artist-dna": "Artist DNA",
-    "recommendations-artist-dna-description": "New artists who share genres with your favorites"
+    "recommendations-artist-dna-description": "New artists who share genres with your favorites",
+    "create-smart-playlist": "Create smart playlist",
+    "edit-smart-playlist": "Edit smart playlist",
+    "is": "is",
+    "is-not": "is not",
+    "contains": "contains",
+    "does-not-contain": "does not contain",
+    "add-if-any-rule-matches": "Add if any rule matches",
+    "limit-to": "Limit to",
+    "genre": "Genre",
+    "album-title": "Album title",
+    "album-artist": "Album artist",
+    "greater-than": "greater than",
+    "less-than": "less than",
+    "bitrate": "Bitrate",
+    "value": "Value"
 }
