@@ -889,4 +889,13 @@ export class Settings implements SettingsBase {
     public set miniPlayerLockPosition(v: boolean) {
         this.set('miniPlayerLockPosition', v);
     }
+
+    // miniPlayerAlwaysShowSong
+    public get miniPlayerAlwaysShowSong(): boolean {
+        return this.get<boolean>('miniPlayerAlwaysShowSong');
+    }
+
+    public set miniPlayerAlwaysShowSong(v: boolean) {
+        this.set('miniPlayerAlwaysShowSong', v);
+    }
 }

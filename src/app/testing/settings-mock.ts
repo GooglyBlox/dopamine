@@ -98,6 +98,7 @@ export class SettingsMock implements SettingsBase {
     public useCompactYearView: boolean;
     public miniPlayerAlwaysOnTop: boolean;
     public miniPlayerLockPosition: boolean;
+    public miniPlayerAlwaysShowSong: boolean;
 
     public get albumKeyIndex(): string {
         return this.albumKeyIndexMock;
