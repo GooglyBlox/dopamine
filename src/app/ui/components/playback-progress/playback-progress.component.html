@@ -5,6 +5,7 @@
     (mouseleave)="progressContainerMouseLeave()"
     (mousedown)="progressContainerMouseDown($event)"
     (contextmenu)="onProgressRightClick($event)"
+    (touchstart)="progressContainerTouchStart($event)"
 >
     <div class="app-playback-progress-track" #progressTrack></div>
     <div class="app-playback-progress-bar" #progressBar [ngStyle]="{ width: this.progressBarPosition + 'px' }"></div>
@@ -34,6 +35,7 @@
         *ngIf="showProgressThumb"
         [ngStyle]="{ 'margin-left': this.progressThumbPosition + 'px' }"
         (mousedown)="progressThumbMouseDown()"
+        (touchstart)="progressThumbTouchStart($event)"
     ></div>
 </div>
 
