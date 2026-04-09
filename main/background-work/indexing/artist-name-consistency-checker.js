@@ -668,7 +668,7 @@ class ArtistNameConsistencyChecker {
                     parts.push(String(track.trackNumber).padStart(2, '0'));
                 }
 
-                parts.push(this.#sanitizeFolderName(title));
+                parts.push(this.#sanitizeFolderName(title, { isFolder: false }));
 
                 const newBaseName = parts.join(' - ');
                 const dir = path.dirname(track.path);
@@ -938,7 +938,7 @@ class ArtistNameConsistencyChecker {
     /**
      * Sanitizes a string for use as a folder name by removing invalid filesystem characters.
      */
-    #sanitizeFolderName(name) {
+    #sanitizeFolderName(name, { isFolder = true } = {}) {
         if (!name) {
             return 'Unknown';
         }
@@ -962,6 +962,12 @@ class ArtistNameConsistencyChecker {
 
         sanitized = sanitized.replace(/\s+/g, ' ').trim();
         sanitized = sanitized.replace(/[. ]+$/, '');
+
+        // Folders starting with '.' are hidden on Unix and ignored by Soulseek,
+        // so replace a leading dot with an underscore (e.g. ".Asics" -> "_Asics").
+        if (isFolder && sanitized.startsWith('.')) {
+            sanitized = '_' + sanitized.slice(1);
+        }
 
         return sanitized || 'Unknown';
     }
