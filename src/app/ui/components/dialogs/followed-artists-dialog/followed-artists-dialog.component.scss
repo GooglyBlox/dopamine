@@ -1,0 +1,130 @@
+.followed-list {
+    display: flex;
+    flex-direction: column;
+    max-height: 460px;
+    overflow-y: auto;
+    border: 1px solid var(--theme-pane-separators);
+    border-radius: 4px;
+}
+
+.followed-list__empty {
+    padding: 24px;
+    color: var(--theme-secondary-text);
+    text-align: center;
+}
+
+.followed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--theme-pane-separators);
+
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.followed-row__main {
+    flex: 1;
+    min-width: 0;
+}
+
+.followed-row__name-line {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.followed-row__name {
+    font-size: var(--fontsize);
+    color: var(--theme-primary-text);
+    font-weight: 500;
+}
+
+.followed-row__disambiguation {
+    font-size: calc(var(--fontsize) * 0.9);
+    font-style: italic;
+}
+
+.followed-row__meta {
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: calc(var(--fontsize) * 0.82);
+    flex-wrap: wrap;
+}
+
+.followed-row__status {
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-size: calc(var(--fontsize) * 0.74);
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--theme-pane-separators);
+
+    &.status-1 {
+        color: var(--theme-accent-color);
+        border-color: var(--theme-accent-color);
+    }
+
+    &.status-2,
+    &.status-3 {
+        color: #d97757;
+        border-color: #d97757;
+    }
+}
+
+.followed-row__mb-name {
+    font-style: italic;
+}
+
+.followed-row__link {
+    background: none;
+    border: none;
+    color: var(--theme-secondary-text);
+    cursor: pointer;
+    padding: 1px 4px;
+    border-radius: 3px;
+
+    &:hover {
+        color: var(--theme-accent-color);
+    }
+}
+
+.followed-row__actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.followed-row__btn {
+    background: none;
+    border: 1px solid var(--theme-pane-separators);
+    color: var(--theme-secondary-text);
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 4px;
+    min-width: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        color: var(--theme-primary-text);
+        background-color: var(--theme-hovered-item-background);
+        border-color: var(--theme-secondary-text);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+}
+
+.followed-row__btn--danger:hover {
+    color: #ff5d5d;
+    border-color: #ff5d5d;
+}

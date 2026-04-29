@@ -24,6 +24,10 @@ import { TrackModels } from '../../../../../services/track/track-models';
 import { DialogServiceBase } from '../../../../../services/dialog/dialog.service.base';
 import { ArtistRenameService } from '../../../../../services/artist/artist-rename.service';
 import { TranslatorServiceBase } from '../../../../../services/translator/translator.service.base';
+import { FollowedArtistsService } from '../../../../../services/release-calendar/followed-artists.service';
+import { MusicBrainzApi } from '../../../../../common/api/musicbrainz/musicbrainz.api';
+import { ReleaseCalendarService } from '../../../../../services/release-calendar/release-calendar.service';
+import { ReleaseNameKey } from '../../../../../services/release-calendar/release-name-key';
 
 @Component({
     selector: 'app-artist-browser',
@@ -60,6 +64,9 @@ export class ArtistBrowserComponent implements OnInit, OnDestroy {
         private dialogService: DialogServiceBase,
         private artistRenameService: ArtistRenameService,
         private translatorService: TranslatorServiceBase,
+        private followedArtistsService: FollowedArtistsService,
+        private musicBrainzApi: MusicBrainzApi,
+        private releaseCalendarService: ReleaseCalendarService,
     ) {}
 
     public shouldZoomOut: boolean = false;
@@ -157,6 +164,39 @@ export class ArtistBrowserComponent implements OnInit, OnDestroy {
 
         this.playbackService.forceShuffled();
         await this.playbackService.enqueueAndPlayArtistAsync(artist, this.selectedArtistType);
+    }
+
+    public isArtistFollowed(artist: ArtistModel): boolean {
+        if (artist == undefined) {
+            return false;
+        }
+        return this.followedArtistsService.isFollowed(artist.name);
+    }
+
+    public async onToggleFollowArtist(artist: ArtistModel): Promise<void> {
+        if (artist == undefined) {
+            return;
+        }
+        if (this.followedArtistsService.isFollowed(artist.name)) {
+            this.followedArtistsService.unfollow(artist.name);
+            return;
+        }
+
+        try {
+            const candidates = await this.musicBrainzApi.findArtistCandidatesByName(artist.name);
+            const picked = await this.dialogService.showArtistMbidPickerAsync(artist.name, candidates);
+            if (picked == undefined) {
+                return;
+            }
+            const nameKey = ReleaseNameKey.fromArtistName(artist.name);
+            this.followedArtistsService.follow(artist.name);
+            this.releaseCalendarService.bindArtistToMbid(artist.name, nameKey, picked);
+            this.releaseCalendarService.syncFollowedArtistsAsync(true).catch((e: unknown) => {
+                this.logger.error(e, 'Failed to sync after follow', 'ArtistBrowserComponent', 'onToggleFollowArtist');
+            });
+        } catch (e: unknown) {
+            this.logger.error(e, 'Failed to follow artist', 'ArtistBrowserComponent', 'onToggleFollowArtist');
+        }
     }
 
     public async onRenameArtistAsync(artist: ArtistModel): Promise<void> {

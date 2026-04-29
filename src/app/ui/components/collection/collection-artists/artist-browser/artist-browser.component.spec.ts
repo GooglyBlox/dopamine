@@ -20,6 +20,11 @@ import { ArtistSorter } from '../../../../../common/sorting/artist-sorter';
 import { PlaybackService } from '../../../../../services/playback/playback.service';
 import { TrackServiceBase } from '../../../../../services/track/track.service.base';
 import { TrackModels } from '../../../../../services/track/track-models';
+import { DialogServiceBase } from '../../../../../services/dialog/dialog.service.base';
+import { ArtistRenameService } from '../../../../../services/artist/artist-rename.service';
+import { FollowedArtistsService } from '../../../../../services/release-calendar/followed-artists.service';
+import { MusicBrainzApi } from '../../../../../common/api/musicbrainz/musicbrainz.api';
+import { ReleaseCalendarService } from '../../../../../services/release-calendar/release-calendar.service';
 
 export class CdkVirtualScrollViewportMock {
     private _scrollToIndexIndex: number = -1;
@@ -53,6 +58,11 @@ describe('ArtistBrowserComponent', () => {
     let loggerMock: IMock<Logger>;
     let translatorServiceMock: IMock<TranslatorServiceBase>;
     let semanticZoomHeaderAdderMock: IMock<SemanticZoomHeaderAdder>;
+    let dialogServiceMock: IMock<DialogServiceBase>;
+    let artistRenameServiceMock: IMock<ArtistRenameService>;
+    let followedArtistsServiceMock: IMock<FollowedArtistsService>;
+    let musicBrainzApiMock: IMock<MusicBrainzApi>;
+    let releaseCalendarServiceMock: IMock<ReleaseCalendarService>;
     let artistsPersisterMock: IMock<ArtistsPersister>;
     let semanticZoomService_zoomOutRequested: Subject<void>;
     let semanticZoomService_zoomInRequested: Subject<string>;
@@ -76,6 +86,12 @@ describe('ArtistBrowserComponent', () => {
             semanticZoomHeaderAdder,
             schedulerMock.object,
             loggerMock.object,
+            dialogServiceMock.object,
+            artistRenameServiceMock.object,
+            translatorServiceMock.object,
+            followedArtistsServiceMock.object,
+            musicBrainzApiMock.object,
+            releaseCalendarServiceMock.object,
         );
     }
 
@@ -92,6 +108,12 @@ describe('ArtistBrowserComponent', () => {
             semanticZoomHeaderAdderMock.object,
             schedulerMock.object,
             loggerMock.object,
+            dialogServiceMock.object,
+            artistRenameServiceMock.object,
+            translatorServiceMock.object,
+            followedArtistsServiceMock.object,
+            musicBrainzApiMock.object,
+            releaseCalendarServiceMock.object,
         );
     }
 
@@ -111,6 +133,11 @@ describe('ArtistBrowserComponent', () => {
         schedulerMock = Mock.ofType<SchedulerBase>();
         loggerMock = Mock.ofType<Logger>();
         playbackServiceMock = Mock.ofType<PlaybackService>();
+        dialogServiceMock = Mock.ofType<DialogServiceBase>();
+        artistRenameServiceMock = Mock.ofType<ArtistRenameService>();
+        followedArtistsServiceMock = Mock.ofType<FollowedArtistsService>();
+        musicBrainzApiMock = Mock.ofType<MusicBrainzApi>();
+        releaseCalendarServiceMock = Mock.ofType<ReleaseCalendarService>();
 
         guidFactoryMock.setup((x) => x.create()).returns(() => '91c70666-8ad0-4037-8590-47f0c453c97d');
 

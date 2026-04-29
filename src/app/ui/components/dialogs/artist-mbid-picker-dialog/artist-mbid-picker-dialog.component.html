@@ -1,0 +1,43 @@
+<app-dialog-header icon="las la-search" title="{{ 'pick-musicbrainz-artist' | translate }}"></app-dialog-header>
+<mat-dialog-content>
+    <div class="mbid-picker__description mb-3">
+        {{ 'pick-musicbrainz-artist-description' | translate: { name: data.artistName } }}
+    </div>
+    <div class="mbid-picker__empty" *ngIf="data.candidates.length === 0">
+        {{ 'pick-musicbrainz-artist-no-results' | translate }}
+    </div>
+    <div class="mbid-picker__list" *ngIf="data.candidates.length > 0">
+        <div
+            *ngFor="let candidate of data.candidates"
+            class="mbid-picker__row"
+            [class.is-selected]="selected?.mbid === candidate.mbid"
+            (click)="select(candidate)"
+        >
+            <div class="mbid-picker__row-main">
+                <span class="mbid-picker__name">{{ candidate.name }}</span>
+                <span class="mbid-picker__disambiguation secondary-text" *ngIf="candidate.disambiguation">
+                    ({{ candidate.disambiguation }})
+                </span>
+            </div>
+            <div class="mbid-picker__row-meta secondary-text">
+                <span *ngIf="candidate.type">{{ candidate.type }}</span>
+                <span *ngIf="candidate.country">&middot; {{ candidate.country }}</span>
+                <span *ngIf="lifeSpanFor(candidate)">&middot; {{ lifeSpanFor(candidate) }}</span>
+                <span *ngIf="candidate.score > 0">&middot; {{ 'score' | translate }} {{ candidate.score }}</span>
+                <button
+                    class="mbid-picker__open-link"
+                    (click)="openMusicBrainzPage(candidate, $event)"
+                    matTooltip="{{ 'releases-open-musicbrainz' | translate }}"
+                >
+                    <i class="las la-external-link-alt"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</mat-dialog-content>
+<mat-dialog-actions>
+    <app-accent-button class="mr-2" (click)="confirm()" [ngClass]="{ inactive: !selected }">
+        {{ 'follow' | translate }}
+    </app-accent-button>
+    <app-transparent-button (click)="cancel()">{{ 'cancel' | translate }}</app-transparent-button>
+</mat-dialog-actions>

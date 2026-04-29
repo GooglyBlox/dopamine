@@ -1,0 +1,310 @@
+.releases-viewport {
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 !important;
+}
+
+.releases-container {
+    padding: 20px 28px 100px 28px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.releases-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.releases-title {
+    color: var(--theme-accent-color);
+    font-weight: lighter;
+    font-size: calc(var(--fontsize) * 1.7);
+}
+
+.releases-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.releases-sync-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: calc(var(--fontsize) * 0.85);
+
+    & i.rotating {
+        animation: releases-rotate 1.4s linear infinite;
+    }
+}
+
+.releases-sync-status__artist {
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.releases-followed-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--theme-pane-separators);
+    color: var(--theme-secondary-text);
+    font-size: calc(var(--fontsize) * 0.9);
+    cursor: pointer;
+    padding: 5px 12px;
+    border-radius: 999px;
+    transition: all 0.15s ease;
+
+    &:hover {
+        color: var(--theme-primary-text);
+        border-color: var(--theme-secondary-text);
+    }
+}
+
+.releases-followed-btn__count {
+    font-weight: 500;
+    color: var(--theme-primary-text);
+}
+
+.releases-refresh-btn {
+    background: none;
+    border: none;
+    color: var(--theme-secondary-text);
+    font-size: calc(var(--fontsize) * 1.3);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+
+    &:hover {
+        color: var(--theme-primary-text);
+        background-color: var(--theme-hovered-item-background);
+    }
+}
+
+@keyframes releases-rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.releases-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.releases-filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.releases-filter-chip {
+    background: none;
+    border: 1px solid var(--theme-pane-separators);
+    color: var(--theme-secondary-text);
+    font-size: calc(var(--fontsize) * 0.9);
+    padding: 5px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+        color: var(--theme-primary-text);
+        border-color: var(--theme-secondary-text);
+    }
+
+    &.is-active {
+        color: var(--theme-button-text);
+        background-color: var(--theme-accent-color);
+        border-color: var(--theme-accent-color);
+    }
+}
+
+.releases-filter-chip--secondary {
+    font-size: calc(var(--fontsize) * 0.82);
+    padding: 4px 10px;
+    opacity: 0.9;
+}
+
+.releases-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.releases-group__header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--theme-pane-separators);
+}
+
+.releases-group__label {
+    font-size: calc(var(--fontsize) * 1.15);
+    font-weight: 500;
+    color: var(--theme-primary-text);
+}
+
+.releases-group__count {
+    font-size: calc(var(--fontsize) * 0.85);
+}
+
+.releases-group__entries {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+}
+
+.release-card {
+    display: flex;
+    flex-direction: column;
+    border-radius: 6px;
+    cursor: default;
+    transition: transform 0.15s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+
+        .release-card__cover-image,
+        .release-card__cover-fallback {
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        }
+    }
+}
+
+.release-card__cover {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: var(--theme-secondary-background);
+}
+
+.release-card__cover-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: box-shadow 0.15s ease;
+}
+
+.release-card__cover-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--theme-secondary-text);
+    font-size: 64px;
+    transition: box-shadow 0.15s ease;
+}
+
+.release-card__date {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    background-color: rgba(0, 0, 0, 0.65);
+    color: #ffffff;
+    font-size: calc(var(--fontsize) * 0.78);
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.3px;
+}
+
+.release-card__info {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.release-card__title {
+    font-size: var(--fontsize);
+    color: var(--theme-primary-text);
+    cursor: pointer;
+    line-height: 1.3;
+
+    &:hover {
+        color: var(--theme-accent-color);
+    }
+}
+
+.release-card__artist {
+    font-size: calc(var(--fontsize) * 0.85);
+    cursor: pointer;
+    line-height: 1.3;
+
+    &:hover {
+        color: var(--theme-primary-text);
+    }
+}
+
+.release-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: calc(var(--fontsize) * 0.78);
+}
+
+.release-card__type {
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--theme-secondary-text);
+    border: 1px solid var(--theme-pane-separators);
+    padding: 1px 6px;
+    border-radius: 3px;
+}
+
+.release-card__upcoming {
+    color: var(--theme-accent-color);
+}
+
+.release-card__upcoming--today {
+    color: var(--theme-button-text);
+    background-color: var(--theme-accent-color);
+    padding: 1px 8px;
+    border-radius: 3px;
+}
+
+.releases-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+}
+
+.releases-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 40px;
+    gap: 16px;
+}
+
+.releases-empty__icon {
+    font-size: 64px;
+    color: var(--theme-secondary-text);
+    opacity: 0.4;
+}
+
+.releases-empty__text {
+    font-size: calc(var(--fontsize) * 1.05);
+    text-align: center;
+    max-width: 480px;
+    line-height: 1.6;
+}

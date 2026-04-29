@@ -925,4 +925,54 @@ export class Settings implements SettingsBase {
     public set richLyricsFontSize(v: number) {
         this.set('richLyricsFontSize', v);
     }
+
+    // showReleasesPage
+    public get showReleasesPage(): boolean {
+        const val = this.get<boolean>('showReleasesPage');
+        return val ?? true;
+    }
+
+    public set showReleasesPage(v: boolean) {
+        this.set('showReleasesPage', v);
+    }
+
+    // releaseCalendarSyncIntervalHours
+    public get releaseCalendarSyncIntervalHours(): number {
+        const val = this.get<number>('releaseCalendarSyncIntervalHours');
+        return val ?? 24;
+    }
+
+    public set releaseCalendarSyncIntervalHours(v: number) {
+        this.set('releaseCalendarSyncIntervalHours', v);
+    }
+
+    // releaseCalendarLookbackDays
+    public get releaseCalendarLookbackDays(): number {
+        const val = this.get<number>('releaseCalendarLookbackDays');
+        return val ?? 60;
+    }
+
+    public set releaseCalendarLookbackDays(v: number) {
+        this.set('releaseCalendarLookbackDays', v);
+    }
+
+    // releaseCalendarLookaheadDays
+    public get releaseCalendarLookaheadDays(): number {
+        const val = this.get<number>('releaseCalendarLookaheadDays');
+        return val ?? 365;
+    }
+
+    public set releaseCalendarLookaheadDays(v: number) {
+        this.set('releaseCalendarLookaheadDays', v);
+    }
+
+    // releaseCalendarLastFullSyncAt
+    public get releaseCalendarLastFullSyncAt(): number {
+        const val = this.get<number>('releaseCalendarLastFullSyncAt');
+        return val ?? 0;
+    }
+
+    public set releaseCalendarLastFullSyncAt(v: number) {
+        this.set('releaseCalendarLastFullSyncAt', v);
+    }
 }

@@ -55,6 +55,8 @@ describe('CollectionNavigationService', () => {
             settingsMock.setup((x) => x.showTracksPage).returns(() => false);
             settingsMock.setup((x) => x.showPlaylistsPage).returns(() => false);
             settingsMock.setup((x) => x.showFoldersPage).returns(() => false);
+            settingsMock.setup((x) => x.showRecommendationsPage).returns(() => false);
+            settingsMock.setup((x) => x.showReleasesPage).returns(() => false);
 
             // Act
             const service: CollectionNavigationService = createSut();

@@ -1,0 +1,56 @@
+<app-dialog-header icon="las la-user-friends" title="{{ 'followed-artists' | translate }}"></app-dialog-header>
+<mat-dialog-content>
+    <div class="followed-list__empty" *ngIf="details.length === 0">
+        {{ 'followed-artists-empty' | translate }}
+    </div>
+    <div class="followed-list" *ngIf="details.length > 0">
+        <div *ngFor="let detail of details; trackBy: trackByKey" class="followed-row">
+            <div class="followed-row__main">
+                <div class="followed-row__name-line">
+                    <span class="followed-row__name">{{ detail.name }}</span>
+                    <span class="followed-row__disambiguation secondary-text" *ngIf="detail.mbDisambiguation">
+                        ({{ detail.mbDisambiguation }})
+                    </span>
+                </div>
+                <div class="followed-row__meta secondary-text">
+                    <span class="followed-row__status" [ngClass]="'status-' + detail.resolutionStatus">
+                        {{ statusLabel(detail) | translate }}
+                    </span>
+                    <span *ngIf="infoLineFor(detail).length > 0">&middot; {{ infoLineFor(detail) }}</span>
+                    <span class="followed-row__mb-name" *ngIf="detail.mbName && detail.mbName !== detail.name">
+                        &middot; {{ 'releases-mb-as' | translate: { name: detail.mbName } }}
+                    </span>
+                    <button
+                        *ngIf="detail.mbid"
+                        class="followed-row__link"
+                        (click)="openMbPage(detail, $event)"
+                        matTooltip="{{ 'releases-open-musicbrainz' | translate }}"
+                    >
+                        <i class="las la-external-link-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="followed-row__actions">
+                <button
+                    class="followed-row__btn"
+                    (click)="changeMbidAsync(detail)"
+                    [disabled]="busyMbid === detail.nameKey"
+                    matTooltip="{{ 'releases-change-mbid' | translate }}"
+                >
+                    <i class="las la-exchange-alt" *ngIf="busyMbid !== detail.nameKey"></i>
+                    <mat-spinner *ngIf="busyMbid === detail.nameKey" diameter="16"></mat-spinner>
+                </button>
+                <button
+                    class="followed-row__btn followed-row__btn--danger"
+                    (click)="unfollow(detail)"
+                    matTooltip="{{ 'unfollow-artist' | translate }}"
+                >
+                    <i class="las la-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</mat-dialog-content>
+<mat-dialog-actions>
+    <app-transparent-button (click)="close()">{{ 'close' | translate }}</app-transparent-button>
+</mat-dialog-actions>

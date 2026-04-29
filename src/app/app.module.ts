@@ -305,7 +305,12 @@ import { AlbumPlaceholderComponent } from './ui/components/highlights/album-plac
 import { DuplicateTracksDialogComponent } from './ui/components/dialogs/duplicate-tracks-dialog/duplicate-tracks-dialog.component';
 import { DuplicateDetectionService } from './services/duplicate/duplicate-detection.service';
 import { CollectionRecommendationsComponent } from './ui/components/collection/collection-recommendations/collection-recommendations.component';
+import { CollectionReleasesComponent } from './ui/components/collection/collection-releases/collection-releases.component';
 import { EditSmartPlaylistDialogComponent } from './ui/components/dialogs/edit-smart-playlist-dialog/edit-smart-playlist-dialog.component';
+import { ReleaseCalendarRepositoryBase } from './data/repositories/release-calendar-repository.base';
+import { ReleaseCalendarRepository } from './data/repositories/release-calendar-repository';
+import { ArtistMbidPickerDialogComponent } from './ui/components/dialogs/artist-mbid-picker-dialog/artist-mbid-picker-dialog.component';
+import { FollowedArtistsDialogComponent } from './ui/components/dialogs/followed-artists-dialog/followed-artists-dialog.component';
 
 export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
     return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -478,6 +483,9 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         DuplicateTracksDialogComponent,
         IterableMenuComponent,
         CollectionRecommendationsComponent,
+        CollectionReleasesComponent,
+        ArtistMbidPickerDialogComponent,
+        FollowedArtistsDialogComponent,
     ],
     imports: [
         BrowserAnimationsModule,
@@ -595,6 +603,7 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         { provide: FolderRepositoryBase, useClass: FolderRepository },
         { provide: AlbumArtworkRepositoryBase, useClass: AlbumArtworkRepository },
         { provide: QueuedTrackRepositoryBase, useClass: QueuedTrackRepository },
+        { provide: ReleaseCalendarRepositoryBase, useClass: ReleaseCalendarRepository },
         { provide: ApplicationServiceBase, useClass: ApplicationService },
         { provide: NavigationServiceBase, useClass: NavigationService },
         { provide: AlbumArtworkCacheServiceBase, useClass: AlbumArtworkCacheService },

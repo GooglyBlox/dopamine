@@ -98,4 +98,9 @@ export abstract class SettingsBase {
     public abstract showRichLyrics: boolean;
     public abstract richLyricsLineCount: number;
     public abstract richLyricsFontSize: number;
+    public abstract showReleasesPage: boolean;
+    public abstract releaseCalendarSyncIntervalHours: number;
+    public abstract releaseCalendarLookbackDays: number;
+    public abstract releaseCalendarLookaheadDays: number;
+    public abstract releaseCalendarLastFullSyncAt: number;
 }

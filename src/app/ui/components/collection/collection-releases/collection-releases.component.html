@@ -1,0 +1,203 @@
+<div class="collection-viewport releases-viewport">
+    <div class="releases-container">
+        <div class="releases-header">
+            <span class="releases-title">{{ 'releases' | translate }}</span>
+            <div class="releases-header__actions">
+                <span
+                    *ngIf="this.progress.isRunning"
+                    class="releases-sync-status secondary-text"
+                    matTooltip="{{ 'releases-syncing' | translate }}"
+                >
+                    <i class="las la-sync-alt rotating"></i>
+                    <span class="releases-sync-status__text" *ngIf="progress.total > 0">
+                        {{ progress.processed }} / {{ progress.total }}
+                        <span *ngIf="progress.artistName" class="releases-sync-status__artist">
+                            — {{ progress.artistName }}
+                        </span>
+                    </span>
+                </span>
+                <button
+                    class="releases-followed-btn"
+                    (click)="openFollowedArtistsManager()"
+                    matTooltip="{{ 'manage-followed-artists' | translate }}"
+                >
+                    <i class="las la-user-friends"></i>
+                    <span class="releases-followed-btn__count">{{ followedCount }}</span>
+                </button>
+                <button class="releases-refresh-btn" (click)="refreshNow()" matTooltip="{{ 'releases-refresh' | translate }}">
+                    <i class="las la-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="releases-filters" *ngIf="allEntriesAvailable()">
+            <div class="releases-filter-group">
+                <button
+                    class="releases-filter-chip"
+                    [class.is-active]="filter === 'all'"
+                    (click)="setFilter('all')"
+                >
+                    {{ 'releases-filter-all' | translate }}
+                </button>
+                <button
+                    class="releases-filter-chip"
+                    [class.is-active]="filter === 'upcoming'"
+                    (click)="setFilter('upcoming')"
+                >
+                    {{ 'releases-filter-upcoming' | translate }}
+                </button>
+                <button
+                    class="releases-filter-chip"
+                    [class.is-active]="filter === 'past30'"
+                    (click)="setFilter('past30')"
+                >
+                    {{ 'releases-filter-past-30' | translate }}
+                </button>
+                <button
+                    class="releases-filter-chip"
+                    [class.is-active]="filter === 'pastYear'"
+                    (click)="setFilter('pastYear')"
+                >
+                    {{ 'releases-filter-past-year' | translate }}
+                </button>
+            </div>
+            <div class="releases-filter-group">
+                <button
+                    class="releases-filter-chip releases-filter-chip--secondary"
+                    [class.is-active]="typeFilter === 'all'"
+                    (click)="setTypeFilter('all')"
+                >
+                    {{ 'releases-type-all' | translate }}
+                </button>
+                <button
+                    class="releases-filter-chip releases-filter-chip--secondary"
+                    [class.is-active]="typeFilter === 'Album'"
+                    (click)="setTypeFilter('Album')"
+                >
+                    {{ 'releases-type-album' | translate }}
+                </button>
+                <button
+                    class="releases-filter-chip releases-filter-chip--secondary"
+                    [class.is-active]="typeFilter === 'EP'"
+                    (click)="setTypeFilter('EP')"
+                >
+                    {{ 'releases-type-ep' | translate }}
+                </button>
+                <button
+                    class="releases-filter-chip releases-filter-chip--secondary"
+                    [class.is-active]="typeFilter === 'Single'"
+                    (click)="setTypeFilter('Single')"
+                >
+                    {{ 'releases-type-single' | translate }}
+                </button>
+            </div>
+        </div>
+
+        <div class="releases-loading" *ngIf="isLoading && groups.length === 0">
+            <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <div class="releases-empty" *ngIf="!isLoading && groups.length === 0">
+            <i class="las la-calendar-alt releases-empty__icon"></i>
+            <span class="releases-empty__text secondary-text">
+                <ng-container *ngIf="followedCount === 0">
+                    {{ 'releases-empty-no-followed' | translate }}
+                </ng-container>
+                <ng-container *ngIf="followedCount > 0 && progress.isRunning">
+                    {{ 'releases-empty-syncing' | translate }}
+                </ng-container>
+                <ng-container *ngIf="followedCount > 0 && !progress.isRunning">
+                    {{ 'releases-empty-no-results' | translate }}
+                </ng-container>
+            </span>
+        </div>
+
+        <div class="releases-groups" *ngIf="groups.length > 0">
+            <div class="releases-group" *ngFor="let group of groups; trackBy: trackByGroupKey">
+                <div class="releases-group__header">
+                    <span class="releases-group__label">
+                        {{ group.sectionKey === 'upcoming' ? ('releases-upcoming' | translate) : group.label }}
+                    </span>
+                    <span class="releases-group__count secondary-text">{{ group.entries.length }}</span>
+                </div>
+                <div class="releases-group__entries">
+                    <div
+                        class="release-card"
+                        *ngFor="let entry of group.entries; trackBy: trackByMbid"
+                        (contextmenu)="onEntryContextMenu($event, entry)"
+                    >
+                        <div class="release-card__cover">
+                            <img
+                                *ngIf="entry.coverImageUrl"
+                                class="release-card__cover-image"
+                                [attr.src]="entry.coverImageUrl | imageToFilePath"
+                                alt=""
+                                draggable="false"
+                            />
+                            <div class="release-card__cover-fallback" *ngIf="!entry.coverImageUrl">
+                                <i class="las la-compact-disc"></i>
+                            </div>
+                            <span class="release-card__date" *ngIf="entry.firstReleaseDate">{{ entry.firstReleaseDate }}</span>
+                        </div>
+                        <div class="release-card__info">
+                            <div
+                                class="release-card__title ellipsis"
+                                matTooltip="{{ 'releases-click-to-copy-title' | translate }}"
+                                (click)="copyTitle(entry)"
+                            >
+                                {{ entry.title }}
+                            </div>
+                            <div
+                                class="release-card__artist ellipsis secondary-text"
+                                matTooltip="{{ 'releases-click-to-copy-artist' | translate }}"
+                                (click)="copyArtist(entry)"
+                            >
+                                {{ entry.artistName }}
+                            </div>
+                            <div class="release-card__meta">
+                                <span class="release-card__type" *ngIf="typeBadgeFor(entry)">
+                                    {{ typeBadgeFor(entry) }}
+                                </span>
+                                <span class="release-card__upcoming" *ngIf="entry.isUpcoming && !entry.isToday">
+                                    {{ 'releases-in-days' | translate: { days: entry.daysFromToday } }}
+                                </span>
+                                <span class="release-card__upcoming release-card__upcoming--today" *ngIf="entry.isToday">
+                                    {{ 'releases-today' | translate }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div
+    #releaseContextMenuAnchor
+    style="visibility: hidden; position: fixed"
+    [style.left]="contextMenuOpener.positionX"
+    [style.top]="contextMenuOpener.positionY"
+    [matMenuTriggerFor]="releaseContextMenu"
+></div>
+
+<mat-menu #releaseContextMenu="matMenu">
+    <ng-template matMenuContent let-entry="data">
+        <button mat-menu-item (click)="copyArtist(entry)">
+            <span>{{ 'releases-copy-artist' | translate }}</span>
+        </button>
+        <button mat-menu-item (click)="copyTitle(entry)">
+            <span>{{ 'releases-copy-title' | translate }}</span>
+        </button>
+        <button mat-menu-item (click)="copyArtistAndTitle(entry)">
+            <span>{{ 'releases-copy-artist-and-title' | translate }}</span>
+        </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="openOnMusicBrainz(entry)">
+            <span>{{ 'releases-open-musicbrainz' | translate }}</span>
+        </button>
+        <button mat-menu-item (click)="hideRelease(entry)">
+            <span>{{ 'releases-hide' | translate }}</span>
+        </button>
+    </ng-template>
+</mat-menu>

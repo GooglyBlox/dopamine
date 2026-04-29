@@ -22,6 +22,10 @@ import { DuplicateGroup } from '../duplicate/duplicate-group';
 import { DuplicateTracksDialogComponent } from '../../ui/components/dialogs/duplicate-tracks-dialog/duplicate-tracks-dialog.component';
 import { EditSmartPlaylistDialogComponent } from '../../ui/components/dialogs/edit-smart-playlist-dialog/edit-smart-playlist-dialog.component';
 import { FileFormats } from '../../common/application/file-formats';
+import { ArtistMbidPickerDialogComponent } from '../../ui/components/dialogs/artist-mbid-picker-dialog/artist-mbid-picker-dialog.component';
+import { FollowedArtistsDialogComponent } from '../../ui/components/dialogs/followed-artists-dialog/followed-artists-dialog.component';
+import { ArtistMbidPickerData } from './artist-mbid-picker-data';
+import { MbArtistCandidate } from '../../common/api/musicbrainz/musicbrainz-types';
 
 @Injectable()
 export class DialogService implements DialogServiceBase {
@@ -162,5 +166,28 @@ export class DialogService implements DialogServiceBase {
         const result: TrackModel[] | undefined = await dialogRef.afterClosed().toPromise();
 
         return result ?? [];
+    }
+
+    public async showArtistMbidPickerAsync(
+        artistName: string,
+        candidates: MbArtistCandidate[],
+    ): Promise<MbArtistCandidate | undefined> {
+        const dialogRef: MatDialogRef<ArtistMbidPickerDialogComponent, MbArtistCandidate | undefined> = this.dialog.open(
+            ArtistMbidPickerDialogComponent,
+            {
+                width: '600px',
+                data: new ArtistMbidPickerData(artistName, candidates),
+            },
+        );
+
+        const result: MbArtistCandidate | undefined = await dialogRef.afterClosed().toPromise();
+        return result;
+    }
+
+    public async showFollowedArtistsAsync(): Promise<void> {
+        const dialogRef: MatDialogRef<FollowedArtistsDialogComponent> = this.dialog.open(FollowedArtistsDialogComponent, {
+            width: '650px',
+        });
+        await dialogRef.afterClosed().toPromise();
     }
 }

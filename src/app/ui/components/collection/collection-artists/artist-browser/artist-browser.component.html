@@ -60,6 +60,9 @@
         <button mat-menu-item (click)="onRenameArtistAsync(artist)">
             <span>{{ 'rename-artist' | translate }}</span>
         </button>
+        <button mat-menu-item (click)="onToggleFollowArtist(artist)">
+            <span>{{ this.isArtistFollowed(artist) ? ('unfollow-artist' | translate) : ('follow-artist' | translate) }}</span>
+        </button>
     </ng-template>
 </mat-menu>
 
