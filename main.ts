@@ -178,6 +178,88 @@ function setInitialWindowState(mainWindow: BrowserWindow): void {
     }
 }
 
+async function openCoverPicker(
+    artist: string,
+    album: string,
+): Promise<{ bigCoverUrl: string } | undefined> {
+    return new Promise((resolve) => {
+        const url = new URL('https://covers.musichoarders.xyz/');
+        url.searchParams.set('remote.port', 'browser');
+        url.searchParams.set('remote.agent', 'Dopamine/3.0.5');
+        url.searchParams.set('remote.text', `Pick cover for ${artist} – ${album}`);
+        url.searchParams.set('artist', artist);
+        url.searchParams.set('album', album);
+        url.searchParams.set('sources', 'lastfm');
+
+        const pickerWindow = new BrowserWindow({
+            width: 1200,
+            height: 900,
+            parent: mainWindow,
+            modal: false,
+            autoHideMenuBar: true,
+            webPreferences: {
+                contextIsolation: true,
+                nodeIntegration: false,
+                sandbox: true,
+            },
+        });
+
+        let resolved = false;
+        const settle = (value: { bigCoverUrl: string } | undefined): void => {
+            if (resolved) {
+                return;
+            }
+            resolved = true;
+            resolve(value);
+            if (!pickerWindow.isDestroyed()) {
+                pickerWindow.close();
+            }
+        };
+
+        pickerWindow.webContents.on('did-finish-load', () => {
+            const injection = `
+                (function () {
+                    const MARKER = '[[DOPAMINE_PICK]]';
+                    window.addEventListener('message', function (event) {
+                        let msg = event.data;
+                        if (typeof msg === 'string') {
+                            try { msg = JSON.parse(msg); } catch (e) { return; }
+                        }
+                        if (msg && msg.type === 'pick' && typeof msg.bigCoverUrl === 'string') {
+                            console.log(MARKER + JSON.stringify({ bigCoverUrl: msg.bigCoverUrl }));
+                        }
+                    });
+                })();
+            `;
+            void pickerWindow.webContents.executeJavaScript(injection, true).catch(() => undefined);
+        });
+
+        // Capture the postMessage data via a console-side bridge: the injected listener
+        // forwards via window.console which we intercept here.
+        pickerWindow.webContents.on('console-message', (_event, _level, message) => {
+            const marker = '[[DOPAMINE_PICK]]';
+            if (typeof message === 'string' && message.startsWith(marker)) {
+                try {
+                    const json: { bigCoverUrl?: string } = JSON.parse(message.slice(marker.length)) as {
+                        bigCoverUrl?: string;
+                    };
+                    if (json.bigCoverUrl != undefined && json.bigCoverUrl.length > 0) {
+                        settle({ bigCoverUrl: json.bigCoverUrl });
+                    }
+                } catch {
+                    // ignore
+                }
+            }
+        });
+
+        pickerWindow.on('closed', () => {
+            settle(undefined);
+        });
+
+        pickerWindow.loadURL(url.toString()).catch(() => settle(undefined));
+    });
+}
+
 function createMainWindow(): void {
     // Set custom AppUserModelID to ensure the app name shows up in Windows media controls
     app.setAppUserModelId('com.digimezzo.dopamine');
@@ -609,6 +691,13 @@ try {
 
         ipcMain.handle('settings:getAll', () => settings.getAll());
         ipcMain.handle('settings:set', (_, key: string, value: any) => settings.set(key, value));
+
+        ipcMain.handle(
+            'release-calendar:pick-cover',
+            async (_, args: { artist: string; album: string }): Promise<{ bigCoverUrl: string } | undefined> => {
+                return await openCoverPicker(args.artist, args.album);
+            },
+        );
     }
 } catch (e) {
     log.error(`[Main] [Main] Could not start. Error: ${e.message}`);

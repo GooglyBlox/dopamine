@@ -412,6 +412,7 @@ describe('validate i18n', () => {
         'releases-mb-as',
         'releases-change-mbid',
         'manage-followed-artists',
+        'releases-pick-cover-art',
     ].sort();
 
     Constants.languages.forEach((language) => {

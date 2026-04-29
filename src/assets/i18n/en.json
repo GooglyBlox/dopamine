@@ -433,5 +433,6 @@
     "releases-status-unresolved": "Pending",
     "releases-mb-as": "as \"{{name}}\"",
     "releases-change-mbid": "Change MusicBrainz match",
-    "manage-followed-artists": "Manage followed artists"
+    "manage-followed-artists": "Manage followed artists",
+    "releases-pick-cover-art": "Choose cover art…"
 }

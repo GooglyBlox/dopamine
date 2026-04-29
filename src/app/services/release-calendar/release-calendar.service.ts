@@ -268,8 +268,8 @@ export class ReleaseCalendarService {
         }
     }
 
-    public async ensureCoverAsync(mbid: string): Promise<string | undefined> {
-        const result = await this.coverCache.ensureCoverAsync(mbid);
+    public async ensureCoverAsync(mbid: string, artistName?: string, albumTitle?: string): Promise<string | undefined> {
+        const result = await this.coverCache.ensureCoverAsync(mbid, artistName, albumTitle);
         if (result.localPath != undefined && result.localPath.length > 0) {
             this.repository.setReleaseGroupCoverArt(mbid, 1, result.localPath, Date.now());
             return result.localPath;
@@ -280,13 +280,43 @@ export class ReleaseCalendarService {
         return undefined;
     }
 
+    public async setManualCoverAsync(mbid: string, imageUrl: string): Promise<string | undefined> {
+        const localPath = await this.coverCache.saveExternalCoverAsync(mbid, imageUrl);
+        if (localPath != undefined && localPath.length > 0) {
+            this.repository.setReleaseGroupCoverArt(mbid, 1, localPath, Date.now());
+            this.updatedSubject.next();
+            return localPath;
+        }
+        return undefined;
+    }
+
+    public async pickCoverFromMusichoardersAsync(
+        entry: ReleaseCalendarEntry,
+    ): Promise<string | undefined> {
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const electron: typeof import('electron') = window.require('electron');
+            const result: { bigCoverUrl: string } | undefined = await electron.ipcRenderer.invoke(
+                'release-calendar:pick-cover',
+                { artist: entry.artistName, album: entry.title },
+            );
+            if (result == undefined || result.bigCoverUrl.length === 0) {
+                return undefined;
+            }
+            return await this.setManualCoverAsync(entry.mbid, result.bigCoverUrl);
+        } catch (e) {
+            this.logger.error(e, 'Failed to pick cover from musichoarders', 'ReleaseCalendarService', 'pickCoverFromMusichoardersAsync');
+            return undefined;
+        }
+    }
+
     public async resolveCoversForVisibleEntriesAsync(entries: ReleaseCalendarEntry[]): Promise<void> {
         const candidates = entries.filter(
             (e) => (e.coverImageUrl == undefined || e.coverImageUrl.length === 0) && !e.coverArtChecked,
         );
         for (const entry of candidates) {
             try {
-                const url = await this.ensureCoverAsync(entry.mbid);
+                const url = await this.ensureCoverAsync(entry.mbid, entry.artistName, entry.title);
                 if (url != undefined && url.length > 0) {
                     entry.coverImageUrl = url;
                     entry.coverArtChecked = true;

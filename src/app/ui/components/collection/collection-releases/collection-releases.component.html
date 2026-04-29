@@ -193,6 +193,9 @@
             <span>{{ 'releases-copy-artist-and-title' | translate }}</span>
         </button>
         <mat-divider></mat-divider>
+        <button mat-menu-item (click)="pickCoverArt(entry)">
+            <span>{{ 'releases-pick-cover-art' | translate }}</span>
+        </button>
         <button mat-menu-item (click)="openOnMusicBrainz(entry)">
             <span>{{ 'releases-open-musicbrainz' | translate }}</span>
         </button>

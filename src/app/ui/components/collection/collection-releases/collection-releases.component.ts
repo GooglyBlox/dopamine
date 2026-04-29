@@ -146,6 +146,18 @@ export class CollectionReleasesComponent implements OnInit, OnDestroy {
         this.releaseCalendarService.hideRelease(entry.mbid);
     }
 
+    public async pickCoverArt(entry: ReleaseCalendarEntry): Promise<void> {
+        try {
+            const localPath = await this.releaseCalendarService.pickCoverFromMusichoardersAsync(entry);
+            if (localPath != undefined && localPath.length > 0) {
+                entry.coverImageUrl = localPath;
+                entry.coverArtChecked = true;
+            }
+        } catch (e) {
+            this.logger.error(e, 'Failed to pick cover art', 'CollectionReleasesComponent', 'pickCoverArt');
+        }
+    }
+
     public coverFor(entry: ReleaseCalendarEntry): string | undefined {
         return entry.coverImageUrl;
     }
