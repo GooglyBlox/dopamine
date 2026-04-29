@@ -946,26 +946,6 @@ export class Settings implements SettingsBase {
         this.set('releaseCalendarSyncIntervalHours', v);
     }
 
-    // releaseCalendarLookbackDays
-    public get releaseCalendarLookbackDays(): number {
-        const val = this.get<number>('releaseCalendarLookbackDays');
-        return val ?? 60;
-    }
-
-    public set releaseCalendarLookbackDays(v: number) {
-        this.set('releaseCalendarLookbackDays', v);
-    }
-
-    // releaseCalendarLookaheadDays
-    public get releaseCalendarLookaheadDays(): number {
-        const val = this.get<number>('releaseCalendarLookaheadDays');
-        return val ?? 365;
-    }
-
-    public set releaseCalendarLookaheadDays(v: number) {
-        this.set('releaseCalendarLookaheadDays', v);
-    }
-
     // releaseCalendarLastFullSyncAt
     public get releaseCalendarLastFullSyncAt(): number {
         const val = this.get<number>('releaseCalendarLastFullSyncAt');

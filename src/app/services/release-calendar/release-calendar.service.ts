@@ -108,16 +108,9 @@ export class ReleaseCalendarService {
         }
 
         const groups = this.repository.getReleaseGroupsForArtists(mbids);
-        const lookbackCutoff = ReleaseDateUtils.daysFromTodaySortValue(-this.settings.releaseCalendarLookbackDays);
-        const lookaheadCutoff = ReleaseDateUtils.daysFromTodaySortValue(this.settings.releaseCalendarLookaheadDays);
         const todayValue = ReleaseDateUtils.todaySortValue();
 
-        const filtered = groups.filter((g) => {
-            if (g.releaseDateValue === 0) {
-                return false;
-            }
-            return g.releaseDateValue >= lookbackCutoff && g.releaseDateValue <= lookaheadCutoff;
-        });
+        const filtered = groups.filter((g) => g.releaseDateValue !== 0);
 
         return filtered
             .map((g) => {

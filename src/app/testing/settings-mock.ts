@@ -104,8 +104,6 @@ export class SettingsMock implements SettingsBase {
     public richLyricsFontSize: number;
     public showReleasesPage: boolean;
     public releaseCalendarSyncIntervalHours: number;
-    public releaseCalendarLookbackDays: number;
-    public releaseCalendarLookaheadDays: number;
     public releaseCalendarLastFullSyncAt: number;
 
     public get albumKeyIndex(): string {

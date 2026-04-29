@@ -96,7 +96,5 @@ export const DEFAULT_SETTINGS = {
     richLyricsFontSize: 1,
     showReleasesPage: true,
     releaseCalendarSyncIntervalHours: 24,
-    releaseCalendarLookbackDays: 60,
-    releaseCalendarLookaheadDays: 365,
     releaseCalendarLastFullSyncAt: 0,
 } as const;

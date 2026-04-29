@@ -100,7 +100,5 @@ export abstract class SettingsBase {
     public abstract richLyricsFontSize: number;
     public abstract showReleasesPage: boolean;
     public abstract releaseCalendarSyncIntervalHours: number;
-    public abstract releaseCalendarLookbackDays: number;
-    public abstract releaseCalendarLookaheadDays: number;
     public abstract releaseCalendarLastFullSyncAt: number;
 }
