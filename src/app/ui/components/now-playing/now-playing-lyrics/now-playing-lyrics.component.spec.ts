@@ -10,12 +10,14 @@ import { LyricsModel } from '../../../../services/lyrics/lyrics-model';
 import { LyricsSourceType } from '../../../../common/api/lyrics/lyrics-source-type';
 import { PlaybackInformationService } from '../../../../services/playback-information/playback-information.service';
 import { SettingsBase } from '../../../../common/settings/settings.base';
+import { LrcLibBackgroundFetcher } from '../../../../services/lyrics/lrc-lib-background-fetcher';
 
 describe('NowPlayingLyricsComponent', () => {
     let appearanceServiceMock: IMock<AppearanceServiceBase>;
     let playbackInformationServiceMock: IMock<PlaybackInformationService>;
     let lyricsServiceMock: IMock<LyricsServiceBase>;
     let settingsMock: IMock<SettingsBase>;
+    let lrcLibBackgroundFetcherMock: IMock<LrcLibBackgroundFetcher>;
 
     let playbackInformationService_playingNextTrack_Mock: Subject<PlaybackInformation>;
     let playbackInformationService_playingPreviousTrack_Mock: Subject<PlaybackInformation>;
@@ -28,6 +30,8 @@ describe('NowPlayingLyricsComponent', () => {
         playbackInformationServiceMock = Mock.ofType<PlaybackInformationService>();
         lyricsServiceMock = Mock.ofType<LyricsServiceBase>();
         settingsMock = Mock.ofType<SettingsBase>();
+        lrcLibBackgroundFetcherMock = Mock.ofType<LrcLibBackgroundFetcher>();
+        lrcLibBackgroundFetcherMock.setup((x) => x.trackTagged$).returns(() => new Subject<string>().asObservable());
 
         playbackInformationService_playingNextTrack_Mock = new Subject();
         playbackInformationService_playingPreviousTrack_Mock = new Subject();
@@ -52,6 +56,7 @@ describe('NowPlayingLyricsComponent', () => {
             appearanceServiceMock.object,
             playbackInformationServiceMock.object,
             lyricsServiceMock.object,
+            lrcLibBackgroundFetcherMock.object,
             settingsMock.object,
         );
     }

@@ -17,6 +17,7 @@ import { DesktopBase } from './common/io/desktop.base';
 import { AudioVisualizer } from './services/playback/audio-visualizer';
 import { LifetimeService } from './services/lifetime/lifetime.service';
 import { DatabaseMigratorBase } from './data/database-migrator.base';
+import { LrcLibBackgroundFetcher } from './services/lyrics/lrc-lib-background-fetcher';
 
 describe('AppComponent', () => {
     let databaseMigratorMock: IMock<DatabaseMigratorBase>;
@@ -30,6 +31,7 @@ describe('AppComponent', () => {
     let eventListenerServiceMock: IMock<EventListenerServiceBase>;
     let lifetimeServiceMock: IMock<LifetimeService>;
     let audioVisualizerMock: IMock<AudioVisualizer>;
+    let lrcLibBackgroundFetcherMock: IMock<LrcLibBackgroundFetcher>;
 
     let addToPlaylistMenuMock: IMock<AddToPlaylistMenu>;
     let desktopMock: IMock<DesktopBase>;
@@ -57,6 +59,7 @@ describe('AppComponent', () => {
             desktopMock.object,
             loggerMock.object,
             audioVisualizerMock.object,
+            lrcLibBackgroundFetcherMock.object,
             integrationTestRunnerMock.object,
         );
     }
@@ -78,6 +81,7 @@ describe('AppComponent', () => {
         matDrawerMock = Mock.ofType<MatDrawer>();
         integrationTestRunnerMock = Mock.ofType<IntegrationTestRunner>();
         audioVisualizerMock = Mock.ofType<AudioVisualizer>();
+        lrcLibBackgroundFetcherMock = Mock.ofType<LrcLibBackgroundFetcher>();
 
         showNowPlayingRequestedMock = new Subject();
         showNowPlayingRequestedMock$ = showNowPlayingRequestedMock.asObservable();

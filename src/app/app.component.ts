@@ -21,6 +21,7 @@ import { LifetimeService } from './services/lifetime/lifetime.service';
 import { AudioVisualizer } from './services/playback/audio-visualizer';
 import { DiscordService } from './services/discord/discord.service';
 import { DatabaseMigratorBase } from './data/database-migrator.base';
+import { LrcLibBackgroundFetcher } from './services/lyrics/lrc-lib-background-fetcher';
 
 @Component({
     selector: 'app-root',
@@ -45,6 +46,7 @@ export class AppComponent implements OnInit {
         private desktop: DesktopBase,
         private logger: Logger,
         private audioVisualizer: AudioVisualizer,
+        private lrcLibBackgroundFetcher: LrcLibBackgroundFetcher,
         private integrationTestRunner: IntegrationTestRunner,
     ) {
         log.create('renderer');
@@ -92,6 +94,7 @@ export class AppComponent implements OnInit {
         this.scrobblingService.initialize();
         this.eventListenerService.listenToEvents();
         this.lifetimeService.initialize();
+        this.lrcLibBackgroundFetcher.initialize();
         await this.navigationService.navigateToLoadingAsync();
     }
 }

@@ -204,6 +204,10 @@ import { LyricsService } from './services/lyrics/lyrics.service';
 import { EmbeddedLyricsGetter } from './services/lyrics/embedded-lyrics-getter';
 import { LrcLyricsGetter } from './services/lyrics/lrc-lyrics-getter';
 import { OnlineLyricsGetter } from './services/lyrics/online-lyrics-getter';
+import { LrcLibLyricsGetter } from './services/lyrics/lrc-lib-lyrics-getter';
+import { LrcLibBackgroundFetcher } from './services/lyrics/lrc-lib-background-fetcher';
+import { LrcLibApi } from './common/api/lyrics/lrc-lib.api';
+import { EmbeddedLyricsWriter } from './services/lyrics/embedded-lyrics-writer';
 import { IntegrationTestRunner } from './testing/integration-test-runner';
 import { EventListenerService } from './services/event-listener/event-listener.service';
 import { Desktop } from './common/io/desktop';
@@ -546,6 +550,7 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         FanartApi,
         ChartLyricsApi,
         AZLyricsApi,
+        LrcLibApi,
         MetadataPatcher,
         TracksColumnsOrdering,
         SemanticZoomHeaderAdder,
@@ -583,7 +588,10 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         EmbeddedLyricsGetter,
         LrcLyricsGetter,
         SrtLyricsGetter,
+        LrcLibLyricsGetter,
         OnlineLyricsGetter,
+        EmbeddedLyricsWriter,
+        LrcLibBackgroundFetcher,
         IntegrationTestRunner,
         AudioVisualizer,
         OnlineArtistImageGetter,

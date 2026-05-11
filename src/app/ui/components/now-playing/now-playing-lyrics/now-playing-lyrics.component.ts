@@ -10,6 +10,7 @@ import { LyricsServiceBase } from '../../../../services/lyrics/lyrics.service.ba
 import { StringUtils } from '../../../../common/utils/string-utils';
 import { PlaybackInformationService } from '../../../../services/playback-information/playback-information.service';
 import { SettingsBase } from '../../../../common/settings/settings.base';
+import { LrcLibBackgroundFetcher } from '../../../../services/lyrics/lrc-lib-background-fetcher';
 
 @Component({
     selector: 'app-now-playing-lyrics',
@@ -23,11 +24,13 @@ export class NowPlayingLyricsComponent implements OnInit, OnDestroy {
     private _lyrics: LyricsModel | undefined;
     private previousTrackPath: string = '';
     private _isBusy: boolean = false;
+    private currentTrack: TrackModel | undefined;
 
     public constructor(
         private appearanceService: AppearanceServiceBase,
         private playbackInformationService: PlaybackInformationService,
         private lyricsService: LyricsServiceBase,
+        private lrcLibBackgroundFetcher: LrcLibBackgroundFetcher,
         public settings: SettingsBase,
     ) {}
 
@@ -90,13 +93,25 @@ export class NowPlayingLyricsComponent implements OnInit, OnDestroy {
                 PromiseUtils.noAwait(this.showLyricsAsync(playbackInformation.track));
             }),
         );
+
+        this.subscription.add(
+            this.lrcLibBackgroundFetcher.trackTagged$.subscribe((taggedPath: string) => {
+                if (this.currentTrack != undefined && this.currentTrack.path === taggedPath) {
+                    this.previousTrackPath = '';
+                    PromiseUtils.noAwait(this.showLyricsAsync(this.currentTrack));
+                }
+            }),
+        );
     }
 
     private async showLyricsAsync(track: TrackModel | undefined): Promise<void> {
         if (track == undefined) {
             this._lyrics = undefined;
+            this.currentTrack = undefined;
             return;
         }
+
+        this.currentTrack = track;
 
         if (this.previousTrackPath === track.path && this._lyrics != undefined) {
             return;

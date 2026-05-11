@@ -25,18 +25,16 @@ export class LyricsService implements LyricsServiceBase {
     private cachedOnlineLyrics: LyricsModel | undefined;
 
     public async getLyricsAsync(track: TrackModel): Promise<LyricsModel> {
-        if (this.settings.showRichLyrics) {
-            const srtLyrics = await this.tryGetLyricsAsync(track, this.srtLyricsGetter, 'SRT');
+        const srtLyrics = await this.tryGetLyricsAsync(track, this.srtLyricsGetter, 'SRT');
 
-            if (!StringUtils.isNullOrWhiteSpace(srtLyrics.plainText)) {
-                return srtLyrics;
-            }
+        if (!StringUtils.isNullOrWhiteSpace(srtLyrics.plainText)) {
+            return srtLyrics;
+        }
 
-            const lrcLyrics = await this.tryGetLyricsAsync(track, this.lrcLyricsGetter, 'LRC');
+        const lrcLyrics = await this.tryGetLyricsAsync(track, this.lrcLyricsGetter, 'LRC');
 
-            if (!StringUtils.isNullOrWhiteSpace(lrcLyrics.plainText)) {
-                return lrcLyrics;
-            }
+        if (!StringUtils.isNullOrWhiteSpace(lrcLyrics.plainText)) {
+            return lrcLyrics;
         }
 
         const embeddedLyrics = await this.tryGetLyricsAsync(track, this.embeddedLyricsGetter, 'embedded');

@@ -45,6 +45,28 @@ describe('EmbeddedLyricsGetter', () => {
             expect(lyrics.plainText).toEqual('lyrics');
         });
 
+        it('should parse LRC-formatted embedded lyrics into a synced model', async () => {
+            // Arrange
+            const track = MockCreator.createTrackModel('path', 'title', 'artists');
+            const lrcText: string = '[00:01.00] Line one\n[00:05.50] Line two\n[00:10.25] Line three';
+            const metadataMock: IFileMetadata = { lyrics: lrcText } as IFileMetadata;
+            fileMetadataFactoryMock.setup((x) => x.createAsync(track.path)).returns(() => Promise.resolve(metadataMock));
+            const instance: EmbeddedLyricsGetter = createInstance();
+
+            // Act
+            const lyrics: LyricsModel = await instance.getLyricsAsync(track);
+
+            // Assert
+            expect(lyrics.sourceType).toEqual(LyricsSourceType.embedded);
+            expect(lyrics.textLines).toBeDefined();
+            expect(lyrics.textLines!.length).toEqual(3);
+            expect(lyrics.startTimeStamps).toBeDefined();
+            expect(lyrics.startTimeStamps!.length).toEqual(3);
+            expect(lyrics.startTimeStamps![0]).toBeCloseTo(1.0, 2);
+            expect(lyrics.startTimeStamps![1]).toBeCloseTo(5.5, 2);
+            expect(lyrics.startTimeStamps![2]).toBeCloseTo(10.25, 2);
+        });
+
         it('should return empty lyrics if there are no metadata lyrics', async () => {
             // Arrange
             const track = MockCreator.createTrackModel('path', 'title', 'artists');

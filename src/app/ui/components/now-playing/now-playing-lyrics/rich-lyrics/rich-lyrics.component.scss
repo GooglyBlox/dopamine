@@ -1,28 +1,88 @@
-.rich-contain {
+.live-lyrics {
+    position: relative;
     width: 100%;
     height: 100%;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(0, 0, 0, 0.4) 5%,
+        rgba(0, 0, 0, 1) 16%,
+        rgba(0, 0, 0, 1) 84%,
+        rgba(0, 0, 0, 0.4) 95%,
+        transparent 100%
+    );
+    mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(0, 0, 0, 0.4) 5%,
+        rgba(0, 0, 0, 1) 16%,
+        rgba(0, 0, 0, 1) 84%,
+        rgba(0, 0, 0, 0.4) 95%,
+        transparent 100%
+    );
+}
+
+.live-lyrics__list {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
     display: flex;
     flex-direction: column;
-    overflow-x: scroll;
+    gap: 0.85rem;
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
 }
 
-.rich-side {
-    white-space: pre-line;
-    line-height: 2;
+.live-line {
+    cursor: pointer;
     margin: 0;
-    width: fit-content;
-    max-width: 100%;
-    min-height: 10%;
+    padding: 0;
+    line-height: 1.18;
+    font-size: clamp(28px, 2.3vw, 42px);
+    font-weight: 700;
+    letter-spacing: -0.018em;
+    color: var(--theme-highlight-foreground);
+    opacity: 0.28;
+    transform-origin: left center;
+    transform: translateZ(0) scale(1);
+    transition:
+        opacity 420ms cubic-bezier(0.22, 0.61, 0.36, 1),
+        transform 420ms cubic-bezier(0.22, 0.61, 0.36, 1),
+        color 280ms ease-out,
+        text-shadow 420ms ease-out;
+    will-change: opacity, transform;
+    user-select: none;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
 }
 
-.rich-main {
-    width: fit-content;
-    max-width: 100%;
-    text-wrap: nowrap;
-    line-height: normal;
-    margin: 1vmin 0;
-    background-image: linear-gradient(to right, var(--theme-secondary-color) 0%, var(--theme-highlight-foreground) 1%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    overflow-x: scroll;
+.live-line:hover {
+    opacity: 0.65;
+}
+
+.live-line--blank {
+    opacity: 0.22;
+    letter-spacing: 0.5em;
+}
+
+.live-line--past,
+.live-line--future {
+    opacity: 0.28;
+}
+
+.live-line--active {
+    opacity: 1;
+    font-weight: 800;
+    color: var(--theme-highlight-foreground);
+    transform: translateZ(0) scale(1.035);
+    text-shadow:
+        0 0 28px rgba(255, 255, 255, 0.1),
+        0 2px 18px rgba(0, 0, 0, 0.35);
+}
+
+.live-line--active.live-line--blank {
+    opacity: 0.6;
 }

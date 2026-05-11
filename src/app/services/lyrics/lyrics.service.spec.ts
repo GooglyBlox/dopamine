@@ -210,7 +210,7 @@ describe('LyricsService', () => {
 
         // --- showRichLyrics toggle ---
 
-        it('should skip SRT and LRC when showRichLyrics is disabled', async () => {
+        it('should always probe SRT and LRC even when showRichLyrics is disabled', async () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.showRichLyrics).returns(() => false);
@@ -223,8 +223,8 @@ describe('LyricsService', () => {
             const lyrics: LyricsModel = await sut.getLyricsAsync(trackMock);
 
             // Assert
-            srtLyricsGetterMock.verify((x) => x.getLyricsAsync(It.isAny()), Times.never());
-            lrcLyricsGetterMock.verify((x) => x.getLyricsAsync(It.isAny()), Times.never());
+            srtLyricsGetterMock.verify((x) => x.getLyricsAsync(It.isAny()), Times.atLeastOnce());
+            lrcLyricsGetterMock.verify((x) => x.getLyricsAsync(It.isAny()), Times.atLeastOnce());
             expect(lyrics.sourceType).toEqual(LyricsSourceType.embedded);
         });
 

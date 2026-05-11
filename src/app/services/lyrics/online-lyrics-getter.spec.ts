@@ -38,7 +38,6 @@ describe('OnlineLyricsGetter', () => {
         it('should return empty lyrics if track has no artist and title', async () => {
             // Arrange
             const track: TrackModel = MockCreator.createTrackModel('path', '', '');
-            const lyrics: Lyrics = new Lyrics('ChartLyrics source', 'ChartLyrics text');
             const instance: OnlineLyricsGetter = createInstance();
 
             // Act
