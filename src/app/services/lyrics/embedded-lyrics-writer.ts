@@ -6,7 +6,7 @@ export class EmbeddedLyricsWriter {
         // Lazy require so this Node-only dependency isn't pulled into Jest's
         // static module graph from any of the (many) test suites that
         // transitively import this writer.
-        const taglib = require('@digimezzo/node-taglib-sharp') as typeof import('@digimezzo/node-taglib-sharp');
+        const taglib = require('node-taglib-sharp') as typeof import('node-taglib-sharp');
 
         const tagLibFile = taglib.File.createFromPath(filePath);
         try {

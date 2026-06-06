@@ -95,7 +95,7 @@ export class ArtistRenameService {
         await this.renameArtistFoldersWithRetry(oldName, newName);
 
         // Step 7: Trigger a re-index to refresh the UI
-        this.indexingService.indexCollectionAlways();
+        await this.indexingService.indexCollectionAlwaysAsync();
     }
 
     private updateTrackArtistFields(track: Track, oldName: string, newName: string): void {

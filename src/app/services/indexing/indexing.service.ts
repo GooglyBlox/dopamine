@@ -11,6 +11,7 @@ import { AddingTracksMessage } from './messages/adding-tracks-message';
 import { AlbumArtworkIndexer } from './album-artwork-indexer';
 import { IpcProxyBase } from '../../common/io/ipc-proxy.base';
 import { TrackRepositoryBase } from '../../data/repositories/track-repository.base';
+import { AlbumArtworkRepositoryBase } from '../../data/repositories/album-artwork-repository.base';
 import { IFileMetadata } from '../../common/metadata/i-file-metadata';
 import { Track } from '../../data/entities/track';
 import { TrackFiller } from './track-filler';
@@ -20,6 +21,7 @@ import { DialogServiceBase } from '../dialog/dialog.service.base';
 import { CollectionServiceBase } from '../collection/collection.service.base';
 import { DuplicateGroup } from '../duplicate/duplicate-group';
 import { TrackModel } from '../track/track-model';
+import { SchedulerBase } from '../../common/scheduling/scheduler.base';
 
 @Injectable()
 export class IndexingService implements OnDestroy {
@@ -27,15 +29,18 @@ export class IndexingService implements OnDestroy {
     private subscription: Subscription = new Subscription();
     private foldersHaveChanged: boolean = false;
     private albumGroupingHasChanged: boolean = false;
+    private currentIndexingTask: string = '';
 
     public constructor(
         private notificationService: NotificationServiceBase,
         private folderService: FolderServiceBase,
         private playbackService: PlaybackService,
         private albumArtworkIndexer: AlbumArtworkIndexer,
+        private albumArtworkRepository: AlbumArtworkRepositoryBase,
         private trackRepository: TrackRepositoryBase,
         private trackFiller: TrackFiller,
         private desktop: DesktopBase,
+        private scheduler: SchedulerBase,
         private settings: SettingsBase,
         private ipcProxy: IpcProxyBase,
         private logger: Logger,
@@ -65,25 +70,62 @@ export class IndexingService implements OnDestroy {
             PromiseUtils.noAwait(this.showNotification(message));
         });
 
-        this.ipcProxy.onIndexingWorkerExit$.subscribe(async () => {
-            await this.albumArtworkIndexer.indexAlbumArtworkAsync();
-            this.isIndexingCollection = false;
-            this.indexingFinished.next();
-            await this.checkForDuplicatesAsync();
+        this.ipcProxy.onIndexingWorkerExit$.subscribe(() => {
+            void this.handleOnIndexingWorkerExitAsync();
         });
     }
 
-    public indexCollectionIfOutdated(): void {
+    private async handleOnIndexingWorkerExitAsync(): Promise<void> {
+        if (this.currentIndexingTask === 'replaygain') {
+            const tracks: Track[] = this.trackRepository.getVisibleTracks() ?? [];
+            this.playbackService.updateQueueTracks(tracks);
+
+            this.isIndexingCollection = false;
+            this.currentIndexingTask = '';
+            this.indexingFinished.next();
+
+            return;
+        }
+
+        await this.albumArtworkIndexer.indexAlbumArtworkAsync();
+
+        this.isIndexingCollection = false;
+        this.currentIndexingTask = '';
+        this.indexingFinished.next();
+
+        await this.checkForDuplicatesAsync();
+    }
+
+    public async indexCollectionIfOutdatedAsync(): Promise<void> {
+        if (this.settings.showRefreshNotificationAtStartup) {
+            await this.notificationService.refreshingAsync();
+            await this.scheduler.sleepAsync(1000); // Wait a bit to ensure user sees a refreshing notification
+        }
         this.indexCollection('outdated');
     }
 
-    public indexCollectionAlways(): void {
+    public async indexCollectionAlwaysAsync(): Promise<void> {
+        await this.notificationService.refreshingAsync();
+        await this.scheduler.sleepAsync(1000); // Wait a bit to ensure user sees a refreshing notification
         this.indexCollection('always');
+    }
+
+    public reindexReplayGainForExistingTracks(): void {
+        if (this.isIndexingCollection) {
+            this.logger.info('Already indexing.', 'IndexingService', 'reindexReplayGainForExistingTracks');
+
+            return;
+        }
+
+        this.indexCollection('replaygain');
     }
 
     public async indexCollectionIfOptionsHaveChangedAsync(): Promise<void> {
         if (this.foldersHaveChanged) {
             this.logger.info('Folders have changed. Indexing collection.', 'IndexingService', 'indexCollectionIfOptionsHaveChanged');
+
+            await this.notificationService.refreshingAsync();
+            await this.scheduler.sleepAsync(1000); // Wait a bit to ensure user sees a refreshing notification
             this.indexCollection('always');
         } else if (this.albumGroupingHasChanged) {
             this.logger.info(
@@ -123,7 +165,7 @@ export class IndexingService implements OnDestroy {
         this.indexingFinished.next();
     }
 
-    public async indexAlbumArtworkOnlyAsync(onlyWhenHasNoCover: boolean): Promise<void> {
+    public async indexAlbumArtworkOnlyAsync(onlyWhenHasNoCover: boolean, overwriteManuallyEditedCovers: boolean = false): Promise<void> {
         if (this.isIndexingCollection) {
             this.logger.info('Already indexing.', 'IndexingService', 'indexAlbumArtworkOnlyAsync');
 
@@ -134,6 +176,15 @@ export class IndexingService implements OnDestroy {
         this.foldersHaveChanged = false;
 
         this.logger.info('Indexing collection.', 'IndexingService', 'indexAlbumArtworkOnlyAsync');
+
+        const albumKeyIndex = this.settings.albumKeyIndex;
+
+        if (overwriteManuallyEditedCovers) {
+            this.albumArtworkRepository.clearManuallySetFlag();
+        }
+
+        this.trackRepository.enableNeedsAlbumArtworkIndexingForAllTracks(onlyWhenHasNoCover, albumKeyIndex);
+        this.albumArtworkRepository.deleteAlbumArtworkWithoutCover();
 
         await this.albumArtworkIndexer.indexAlbumArtworkAsync();
 
@@ -181,7 +232,7 @@ export class IndexingService implements OnDestroy {
     private async showNotification(message: IIndexingMessage): Promise<void> {
         switch (message.type) {
             case 'refreshing': {
-                await this.notificationService.refreshing();
+                await this.notificationService.refreshingAsync();
                 break;
             }
             case 'addingTracks': {
@@ -217,11 +268,11 @@ export class IndexingService implements OnDestroy {
     private indexCollection(task: string): void {
         if (this.isIndexingCollection) {
             this.logger.info('Already indexing.', 'IndexingService', 'indexCollection');
-
             return;
         }
 
         this.isIndexingCollection = true;
+        this.currentIndexingTask = task;
         this.foldersHaveChanged = false;
 
         this.logger.info('Indexing collection.', 'IndexingService', 'indexCollection');

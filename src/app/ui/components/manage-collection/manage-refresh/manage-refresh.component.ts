@@ -15,7 +15,11 @@ export class ManageRefreshComponent {
         private indexingService: IndexingService,
     ) {}
 
-    public refreshNow(): void {
-        this.indexingService.indexCollectionAlways();
+    public async refreshNowAsync(): Promise<void> {
+        await this.indexingService.indexCollectionAlwaysAsync();
+    }
+
+    public reindexReplayGainForExistingTracks(): void {
+        this.indexingService.reindexReplayGainForExistingTracks();
     }
 }

@@ -11,11 +11,14 @@ import { LyricsSourceType } from '../../../../common/api/lyrics/lyrics-source-ty
 import { PlaybackInformationService } from '../../../../services/playback-information/playback-information.service';
 import { SettingsBase } from '../../../../common/settings/settings.base';
 import { LrcLibBackgroundFetcher } from '../../../../services/lyrics/lrc-lib-background-fetcher';
+import { ApplicationBase } from '../../../../common/io/application.base';
+import { WindowSize } from '../../../../common/io/window-size';
 
 describe('NowPlayingLyricsComponent', () => {
     let appearanceServiceMock: IMock<AppearanceServiceBase>;
     let playbackInformationServiceMock: IMock<PlaybackInformationService>;
     let lyricsServiceMock: IMock<LyricsServiceBase>;
+    let applicationMock: IMock<ApplicationBase>;
     let settingsMock: IMock<SettingsBase>;
     let lrcLibBackgroundFetcherMock: IMock<LrcLibBackgroundFetcher>;
 
@@ -29,6 +32,8 @@ describe('NowPlayingLyricsComponent', () => {
         appearanceServiceMock = Mock.ofType<AppearanceServiceBase>();
         playbackInformationServiceMock = Mock.ofType<PlaybackInformationService>();
         lyricsServiceMock = Mock.ofType<LyricsServiceBase>();
+        applicationMock = Mock.ofType<ApplicationBase>();
+        applicationMock.setup((x) => x.getWindowSize()).returns(() => new WindowSize(1000, 800));
         settingsMock = Mock.ofType<SettingsBase>();
         lrcLibBackgroundFetcherMock = Mock.ofType<LrcLibBackgroundFetcher>();
         lrcLibBackgroundFetcherMock.setup((x) => x.trackTagged$).returns(() => new Subject<string>().asObservable());
@@ -57,6 +62,7 @@ describe('NowPlayingLyricsComponent', () => {
             playbackInformationServiceMock.object,
             lyricsServiceMock.object,
             lrcLibBackgroundFetcherMock.object,
+            applicationMock.object,
             settingsMock.object,
         );
     }

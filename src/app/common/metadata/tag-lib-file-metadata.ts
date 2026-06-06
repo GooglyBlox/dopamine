@@ -5,9 +5,10 @@ import {
     Id3v2FrameIdentifiers,
     Id3v2PopularimeterFrame,
     Id3v2Tag,
+    MpegAudioFileSettings,
     PictureType,
     TagTypes,
-} from '@digimezzo/node-taglib-sharp';
+} from 'node-taglib-sharp';
 import { IFileMetadata } from './i-file-metadata';
 import { RatingConverter } from './rating-converter';
 
@@ -39,6 +40,10 @@ export class TagLibFileMetadata implements IFileMetadata {
     public composers: string[] = [];
     public conductor: string = '';
     public beatsPerMinute: number = 0;
+    public replayGainTrackGain: number = 0;
+    public replayGainTrackPeak: number = 0;
+    public replayGainAlbumGain: number = 0;
+    public replayGainAlbumPeak: number = 0;
 
     public get rating(): number {
         return this._rating;
@@ -49,7 +54,7 @@ export class TagLibFileMetadata implements IFileMetadata {
     }
 
     public save(): void {
-        const tagLibFile = File.createFromPath(this.path);
+        const tagLibFile = this.createFileWithoutDefaultId3v1ForMp3();
 
         if (this.ratingHasChanged) {
             this.writeRatingToFile(tagLibFile, this.rating);
@@ -90,6 +95,23 @@ export class TagLibFileMetadata implements IFileMetadata {
 
         tagLibFile.save();
         tagLibFile.dispose();
+    }
+
+    private createFileWithoutDefaultId3v1ForMp3(): File {
+        if (!this.path.toLowerCase().endsWith('.mp3')) {
+            return File.createFromPath(this.path);
+        }
+
+        // MPEG defaults include Id3v1 + Id3v2. For rating updates we only need Id3v2 (POPM),
+        // and creating a fresh Id3v1 tag can cause genre names to round-trip as numeric IDs.
+        const originalDefaultTagTypes: TagTypes = MpegAudioFileSettings.defaultTagTypes;
+        MpegAudioFileSettings.defaultTagTypes = TagTypes.Id3v2;
+
+        try {
+            return File.createFromPath(this.path);
+        } finally {
+            MpegAudioFileSettings.defaultTagTypes = originalDefaultTagTypes;
+        }
     }
 
     // eslint-disable-next-line @typescript-eslint/require-await
@@ -167,6 +189,22 @@ export class TagLibFileMetadata implements IFileMetadata {
 
             if (tagLibFile.tag.beatsPerMinute != undefined && !Number.isNaN(tagLibFile.tag.beatsPerMinute)) {
                 this.beatsPerMinute = tagLibFile.tag.beatsPerMinute ?? 0;
+            }
+
+            if (tagLibFile.tag.replayGainTrackGain != undefined && !Number.isNaN(tagLibFile.tag.replayGainTrackGain)) {
+                this.replayGainTrackGain = tagLibFile.tag.replayGainTrackGain ?? 0;
+            }
+
+            if (tagLibFile.tag.replayGainTrackPeak != undefined && !Number.isNaN(tagLibFile.tag.replayGainTrackPeak)) {
+                this.replayGainTrackPeak = tagLibFile.tag.replayGainTrackPeak ?? 0;
+            }
+
+            if (tagLibFile.tag.replayGainAlbumGain != undefined && !Number.isNaN(tagLibFile.tag.replayGainAlbumGain)) {
+                this.replayGainAlbumGain = tagLibFile.tag.replayGainAlbumGain ?? 0;
+            }
+
+            if (tagLibFile.tag.replayGainAlbumPeak != undefined && !Number.isNaN(tagLibFile.tag.replayGainAlbumPeak)) {
+                this.replayGainAlbumPeak = tagLibFile.tag.replayGainAlbumPeak ?? 0;
             }
 
             if (tagLibFile.tag.pictures != undefined && tagLibFile.tag.pictures.length > 0) {

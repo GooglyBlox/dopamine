@@ -3,12 +3,45 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.5] - 2026-04-07
+## [3.0.6] - 2026-06-05
+
+### Fixed
+
+- Manually edited album covers are overwritten on the next collection refresh
+- Fixed AppImage package not working on modern GNU/Linux distributions
+- Deleting song from playlist sometimes fails
+- Playback controls only work when clicking on upper half of the buttons
+- It's unclear that files must be tagged with an external ReplayGain scanner (for example rsgain) before normalization can take effect.
+
+## [3.0.5] - 2026-05-31
+
+### Added
+
+- Added an Adwaita theme, because GNU/Linux deserves some love.
+- Added Windows taskbar media controls accessible by hovering over the app icon in the taskbar
+- Added a "Refresh now" button to the main menu
+- Added ReplayGain support
+- Added option to show album name on the now playing page
+- Added possibility to edit the album cover
 
 ### Changed
 
+- Discord Rich Presence says "Listening to" instead of "Playing"
+- Improved scaling of different parts of the user interface
+- Updated the Czech translation
 - Updated the German translation
+- Updated the Hebrew translation
 - Updated the Russian translation
+- Updated the Vietnamese translation
+
+### Fixed
+
+- Saving a rating to an MP3 file could create an ID3v1 tag, causing genres to be stored and displayed as their numeric ID3v1 code (e.g. "Eurodance" becoming "54")
+- It is not possible to edit songs from the Songs screen
+- There is no scroll bar in the smart playlist editor
+- Loop one does not work correctly when using gapless or crossfading playback
+- When exiting Dopamine, the Discord status doesn't disappear.
+- It's not always clear when Dopamine is refreshing the collection
 
 ## [3.0.4] - 2026-04-08
 

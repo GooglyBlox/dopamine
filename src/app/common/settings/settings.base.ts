@@ -69,6 +69,7 @@ export abstract class SettingsBase {
     public abstract lastFmPassword: string;
     public abstract lastFmSessionKey: string;
     public abstract showLove: boolean;
+    public abstract showAlbumOnNowPlayingPage: boolean;
     public abstract downloadArtistInformationFromLastFm: boolean;
     public abstract downloadLyricsOnline: boolean;
     public abstract showAudioVisualizer: boolean;
@@ -89,9 +90,15 @@ export abstract class SettingsBase {
     public abstract useGaplessPlayback: boolean;
     public abstract useCrossfade: boolean;
     public abstract crossfadeDuration: number;
+    public abstract useReplayGainNormalization: boolean;
+    public abstract replayGainMode: string;
+    public abstract replayGainPreAmp: number;
+    public abstract replayGainPreventClipping: boolean;
+    public abstract logReplayGainAtTrackStart: boolean;
     public abstract jumpToPlayingSong: boolean;
     public abstract showSquareImages: boolean;
     public abstract useCompactYearView: boolean;
+    public abstract showAlbumArtOnDockIcon: boolean;
     public abstract miniPlayerAlwaysOnTop: boolean;
     public abstract miniPlayerLockPosition: boolean;
     public abstract miniPlayerAlwaysShowSong: boolean;
@@ -110,4 +117,5 @@ export abstract class SettingsBase {
     public abstract spotifyPastedPlaylists: string;
     public abstract playlistsTabSelectedSource: string;
     public abstract playlistsTabSelectedSpotifyPlaylist: string;
+    public abstract showRefreshNotificationAtStartup: boolean;
 }

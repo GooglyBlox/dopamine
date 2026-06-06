@@ -26,6 +26,8 @@ import { ArtistMbidPickerDialogComponent } from '../../ui/components/dialogs/art
 import { FollowedArtistsDialogComponent } from '../../ui/components/dialogs/followed-artists-dialog/followed-artists-dialog.component';
 import { ArtistMbidPickerData } from './artist-mbid-picker-data';
 import { MbArtistCandidate } from '../../common/api/musicbrainz/musicbrainz-types';
+import { AlbumModel } from '../album/album-model';
+import { EditAlbumDialogComponent } from '../../ui/components/dialogs/edit-album-dialog/edit-album-dialog.component';
 
 @Injectable()
 export class DialogService implements DialogServiceBase {
@@ -146,6 +148,15 @@ export class DialogService implements DialogServiceBase {
         const result: boolean | undefined = await dialogRef.afterClosed().toPromise();
 
         return result != undefined && result;
+    }
+
+    public async showEditAlbumsAsync(albums: AlbumModel[]): Promise<void> {
+        const dialogRef: MatDialogRef<EditAlbumDialogComponent> = this.dialog.open(EditAlbumDialogComponent, {
+            width: '450px',
+            data: albums,
+        });
+
+        await dialogRef.afterClosed().toPromise();
     }
 
     public async cannotPlayM4aFileAsync(): Promise<void> {

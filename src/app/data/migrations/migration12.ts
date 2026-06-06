@@ -5,13 +5,9 @@ export class Migration12 extends Migration {
     public name: string = 'Migration12';
 
     public up(): void {
-        this.sql(`ALTER TABLE Track ADD COLUMN IsBlacklisted INTEGER NOT NULL DEFAULT 0;`);
-
-        this.sql(`CREATE TABLE IF NOT EXISTS BlacklistedArtist (
-                      NameKey TEXT PRIMARY KEY,
-                      Name TEXT NOT NULL,
-                      IsBlacklisted INTEGER NOT NULL DEFAULT 1,
-                      DateUpdated INTEGER NOT NULL DEFAULT 0
-                  );`);
+        this.sql('ALTER TABLE Track ADD COLUMN ReplayGainTrackGain REAL;');
+        this.sql('ALTER TABLE Track ADD COLUMN ReplayGainTrackPeak REAL;');
+        this.sql('ALTER TABLE Track ADD COLUMN ReplayGainAlbumGain REAL;');
+        this.sql('ALTER TABLE Track ADD COLUMN ReplayGainAlbumPeak REAL;');
     }
 }

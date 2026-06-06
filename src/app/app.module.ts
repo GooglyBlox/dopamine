@@ -149,7 +149,6 @@ import { WelcomeComponent } from './ui/components/welcome/welcome.component';
 import { WindowControlsComponent } from './ui/components/window-controls/window-controls.component';
 import { CdkVirtualScrollViewportPatchDirective } from './ui/directives/cdk-virtual-scroll-viewport-patch-directive';
 import { WebviewDirective } from './ui/directives/webview.directive';
-import { WindowDraggableDirective } from './ui/directives/window-draggable.directive';
 import { GlobalErrorHandler } from './globalErrorHandler';
 import { AlbumsFilterPipe } from './ui/pipes/albums-filter.pipe';
 import { FolderNamePipe } from './ui/pipes/folder-name.pipe';
@@ -269,7 +268,6 @@ import { WelcomeLanguageComponent } from './ui/components/welcome/welcome-langua
 import { WelcomeAppearanceComponent } from './ui/components/welcome/welcome-appearance/welcome-appearance.component';
 import { WelcomeMusicComponent } from './ui/components/welcome/welcome-music/welcome-music.component';
 import { WelcomeOnlineComponent } from './ui/components/welcome/welcome-online/welcome-online.component';
-import { WelcomeDonateComponent } from './ui/components/welcome/welcome-donate/welcome-donate.component';
 import { WelcomeDoneComponent } from './ui/components/welcome/welcome-done/welcome-done.component';
 import { WelcomeNavigationButtonsComponent } from './ui/components/welcome/welcome-navigation-buttons/welcome-navigation-buttons';
 import { AccentButtonComponent } from './ui/components/controls/accent-button/accent-button.component';
@@ -317,6 +315,9 @@ import { ReleaseCalendarRepository } from './data/repositories/release-calendar-
 import { ArtistMbidPickerDialogComponent } from './ui/components/dialogs/artist-mbid-picker-dialog/artist-mbid-picker-dialog.component';
 import { FollowedArtistsDialogComponent } from './ui/components/dialogs/followed-artists-dialog/followed-artists-dialog.component';
 import { SpotifyPlaylistsComponent } from './ui/components/collection/collection-playlists/spotify-playlists/spotify-playlists.component';
+import { HighlightsPlaybackPaneComponent } from './ui/components/highlights/highlights-playback-pane/highlights-playback-pane.component';
+import { WindowDraggableDirective } from './ui/directives/window-draggable.directive';
+import { EditAlbumDialogComponent } from './ui/components/dialogs/edit-album-dialog/edit-album-dialog.component';
 
 export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
     return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -398,6 +399,7 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         ComponentsComponent,
         CollectionFoldersComponent,
         CollectionPlaybackPaneComponent,
+        HighlightsPlaybackPaneComponent,
         VolumeControlComponent,
         SliderComponent,
         SwitchPlayerButtonComponent,
@@ -471,7 +473,6 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         WelcomeAppearanceComponent,
         WelcomeMusicComponent,
         WelcomeOnlineComponent,
-        WelcomeDonateComponent,
         WelcomeDoneComponent,
         WelcomeNavigationButtonsComponent,
         AccentButtonComponent,
@@ -488,6 +489,7 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         VolumeIconComponent,
         EditTracksDialogComponent,
         DuplicateTracksDialogComponent,
+        EditAlbumDialogComponent,
         IterableMenuComponent,
         CollectionRecommendationsComponent,
         CollectionReleasesComponent,

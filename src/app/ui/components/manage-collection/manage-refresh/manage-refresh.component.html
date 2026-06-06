@@ -6,6 +6,11 @@
         >
     </div>
     <div>
+        <app-toggle-switch class="mt-3" [(isChecked)]="settings.showRefreshNotificationAtStartup">
+            {{ 'show-refresh-notification-at-startup' | translate }}</app-toggle-switch
+        >
+    </div>
+    <div>
         <app-toggle-switch class="mt-3" [(isChecked)]="settings.skipRemovedFilesDuringRefresh">
             {{ 'skip-previously-removed-files' | translate }}</app-toggle-switch
         >
@@ -13,7 +18,19 @@
     <mat-divider class="my-4"></mat-divider>
     <div class="title">{{ 'manual-refresh' | translate }}</div>
     <div>{{ 'refresh-collection-now' | translate }}</div>
-    <app-transparent-button class="mt-3" (click)="refreshNow()">
+    <app-transparent-button class="mt-3" (click)="refreshNowAsync()">
         {{ 'refresh-now' | translate }}
     </app-transparent-button>
+    <div class="mt-3">{{ 'refresh-replaygain-existing-tracks' | translate }}</div>
+    <app-transparent-button class="mt-3" (click)="reindexReplayGainForExistingTracks()">
+        {{ 'refresh-replaygain' | translate }}
+    </app-transparent-button>
+    <div class="replaygain-help-text mt-3">
+        <div>{{ 'replaygain-requires-tags' | translate }}</div>
+        <div>
+            {{ 'replaygain-scan-tags-external-tool' | translate }}
+            <a href="https://github.com/complexlogic/rsgain" rel="noopener noreferrer">{{ 'replaygain-tool-rsgain' | translate }}</a
+            >.
+        </div>
+    </div>
 </div>

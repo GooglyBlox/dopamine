@@ -30,6 +30,7 @@ export abstract class TrackRepositoryBase {
     public abstract getBlacklistedTracks(): Track[] | undefined;
     public abstract getLastModifiedTrackForAlbumKeyAsync(albumKeyIndex: string, albumKey: string): Track | undefined;
     public abstract disableNeedsAlbumArtworkIndexing(albumKey: string): void;
+    public abstract enableNeedsAlbumArtworkIndexingForAllTracks(onlyWhenHasNoCover: boolean, albumKeyIndex: string): void;
     public abstract updateTrack(track: Track): void;
     public abstract getTracksForSmartPlaylist(whereClause: string): Track[] | undefined;
 }

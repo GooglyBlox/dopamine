@@ -2,18 +2,29 @@ import { IMock, Mock, Times } from 'typemoq';
 import { MainMenuComponent } from './main-menu.component';
 import { NavigationServiceBase } from '../../../services/navigation/navigation.service.base';
 import { UpdateServiceBase } from '../../../services/update/update.service.base';
+import { DesktopBase } from '../../../common/io/desktop.base';
+import { IndexingService } from '../../../services/indexing/indexing.service';
 
 describe('MainMenuComponent', () => {
     let navigationServiceMock: IMock<NavigationServiceBase>;
     let updateServiceMock: IMock<UpdateServiceBase>;
+    let desktopMock: IMock<DesktopBase>;
+    let indexingServiceMock: IMock<IndexingService>;
 
     let component: MainMenuComponent;
 
     beforeEach(() => {
         navigationServiceMock = Mock.ofType<NavigationServiceBase>();
         updateServiceMock = Mock.ofType<UpdateServiceBase>();
+        desktopMock = Mock.ofType<DesktopBase>();
+        indexingServiceMock = Mock.ofType<IndexingService>();
 
-        component = new MainMenuComponent(navigationServiceMock.object, updateServiceMock.object);
+        component = new MainMenuComponent(
+            navigationServiceMock.object,
+            updateServiceMock.object,
+            desktopMock.object,
+            indexingServiceMock.object,
+        );
     });
 
     describe('constructor', () => {
@@ -68,6 +79,18 @@ describe('MainMenuComponent', () => {
 
             // Assert
             navigationServiceMock.verify((x) => x.navigateToSettingsAsync(), Times.exactly(1));
+        });
+    });
+
+    describe('refreshCollectionNow', () => {
+        it('should refresh the collection', async () => {
+            // Arrange
+
+            // Act
+            await component.refreshCollectionNowAsync();
+
+            // Assert
+            indexingServiceMock.verify((x) => x.indexCollectionAlwaysAsync(), Times.exactly(1));
         });
     });
 

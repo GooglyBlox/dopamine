@@ -68,6 +68,7 @@ class DiscordApi {
             largeImageText: args.largeImageText,
             smallImageKey: args.smallImageKey,
             smallImageText: args.smallImageText,
+            type: args.type,
         };
         if (args.shouldSendTimestamps && args.startTime) {
             presence.startTimestamp = Math.floor(args.startTime / 1000);
@@ -97,6 +98,9 @@ class DiscordApi {
         if (!this._client) {
             electron_log_1.default.warn('[DiscordApi] [shutdown] Discord client not found.');
             return;
+        }
+        if (this._isReady) {
+            this._client.clearActivity();
         }
         this._client.destroy();
         electron_log_1.default.info('[DiscordApi] [shutdown] Discord client destroyed.');

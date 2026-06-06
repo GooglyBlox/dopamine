@@ -89,7 +89,11 @@ export class QueryParts {
                                                              t.Composers AS composers,
                                                              t.Conductor AS conductor,
                                                              t.BeatsPerMinute AS beatsPerMinute,
-                                                             t.IsBlacklisted AS isBlacklisted
+                                                             t.IsBlacklisted AS isBlacklisted,
+                                                             t.ReplayGainTrackGain AS replayGainTrackGain,
+                                                             t.ReplayGainTrackPeak AS replayGainTrackPeak,
+                                                             t.ReplayGainAlbumGain AS replayGainAlbumGain,
+                                                             t.ReplayGainAlbumPeak AS replayGainAlbumPeak
                                                              FROM Track t`;
 
         if (onlyVisibleTracks) {

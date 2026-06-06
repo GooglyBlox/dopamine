@@ -71,6 +71,7 @@ export class SettingsMock implements SettingsBase {
     public showGenresPage: boolean;
     public showIconInNotificationArea: boolean;
     public showLove: boolean;
+    public showAlbumOnNowPlayingPage: boolean;
     public showPlaylistsPage: boolean;
     public showRating: boolean;
     public showTracksPage: boolean;
@@ -93,9 +94,15 @@ export class SettingsMock implements SettingsBase {
     public useGaplessPlayback: boolean;
     public useCrossfade: boolean;
     public crossfadeDuration: number;
+    public useReplayGainNormalization: boolean;
+    public replayGainMode: string;
+    public replayGainPreAmp: number;
+    public replayGainPreventClipping: boolean;
+    public logReplayGainAtTrackStart: boolean;
     public jumpToPlayingSong: boolean;
     public showSquareImages: boolean;
     public useCompactYearView: boolean;
+    public showAlbumArtOnDockIcon: boolean;
     public miniPlayerAlwaysOnTop: boolean;
     public miniPlayerLockPosition: boolean;
     public miniPlayerAlwaysShowSong: boolean;
@@ -105,6 +112,7 @@ export class SettingsMock implements SettingsBase {
     public showReleasesPage: boolean;
     public releaseCalendarSyncIntervalHours: number;
     public releaseCalendarLastFullSyncAt: number;
+    public showRefreshNotificationAtStartup: boolean;
 
     public get albumKeyIndex(): string {
         return this.albumKeyIndexMock;

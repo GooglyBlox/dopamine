@@ -9,7 +9,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/ban-types */
-import { app, BrowserWindow, ipcMain, Menu, nativeTheme, protocol, Tray } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, nativeTheme, protocol, Tray } from 'electron';
 import log from 'electron-log';
 import * as path from 'path';
 import * as url from 'url';
@@ -142,6 +142,17 @@ function getTrayIcon(): string {
             return path.join(globalAny.__static, 'icons/tray_black.png');
         }
     }
+}
+
+function createTaskbarButtonIcon(name: 'play' | 'pause' | 'next' | 'previous') {
+    const iconFileName: Record<'play' | 'pause' | 'next' | 'previous', string> = {
+        play: 'taskbar_play.ico',
+        pause: 'taskbar_pause.ico',
+        next: 'taskbar_next.ico',
+        previous: 'taskbar_previous.ico',
+    };
+
+    return nativeImage.createFromPath(path.join(globalAny.__static, `icons/${iconFileName[name]}`));
 }
 
 function setInitialWindowState(mainWindow: BrowserWindow): void {
@@ -283,6 +294,8 @@ function createMainWindow(): void {
         titleBarStyle: titleBarStyle(),
         trafficLightPosition: isMacOS() ? { x: 10, y: 15 } : undefined,
         icon: path.join(globalAny.__static, isWindows() ? 'icons/icon.ico' : 'icons/64x64.png'),
+        minWidth: 700,
+        minHeight: 500,
         webPreferences: {
             webSecurity: false,
             nodeIntegration: true,
@@ -291,6 +304,8 @@ function createMainWindow(): void {
         },
         show: false,
     });
+
+    mainWindow.excludedFromShownWindowsMenu = true;
 
     setInitialWindowState(mainWindow);
 
@@ -692,6 +707,88 @@ try {
                 discordApi.setPresence(command.args!);
             } else if (command.commandType === DiscordApiCommandType.ClearPresence) {
                 discordApi.clearPresence();
+            }
+        });
+
+        ipcMain.on('update-dock-menu', (event: any, arg: any) => {
+            if (isWindows() && mainWindow) {
+                mainWindow.setThumbarButtons([
+                    {
+                        tooltip: arg.previousLabel,
+                        icon: createTaskbarButtonIcon('previous'),
+                        click(): void {
+                            if (mainWindow) {
+                                mainWindow.webContents.send('dock-previous');
+                            }
+                        },
+                    },
+                    {
+                        tooltip: arg.playPauseLabel,
+                        icon: createTaskbarButtonIcon(arg.isPlaying ? 'pause' : 'play'),
+                        click(): void {
+                            if (mainWindow) {
+                                mainWindow.webContents.send('dock-play-pause');
+                            }
+                        },
+                    },
+                    {
+                        tooltip: arg.nextLabel,
+                        icon: createTaskbarButtonIcon('next'),
+                        click(): void {
+                            if (mainWindow) {
+                                mainWindow.webContents.send('dock-next');
+                            }
+                        },
+                    },
+                ]);
+
+                return;
+            }
+
+            if (!isMacOS() || !app.dock) {
+                return;
+            }
+
+            const dockMenu = Menu.buildFromTemplate([
+                {
+                    label: arg.playPauseLabel,
+                    click(): void {
+                        if (mainWindow) {
+                            mainWindow.webContents.send('dock-play-pause');
+                        }
+                    },
+                },
+                { type: 'separator' },
+                {
+                    label: arg.nextLabel,
+                    click(): void {
+                        if (mainWindow) {
+                            mainWindow.webContents.send('dock-next');
+                        }
+                    },
+                },
+                {
+                    label: arg.previousLabel,
+                    click(): void {
+                        if (mainWindow) {
+                            mainWindow.webContents.send('dock-previous');
+                        }
+                    },
+                },
+            ]);
+
+            app.dock.setMenu(dockMenu);
+        });
+
+        ipcMain.on('update-dock-icon', (event: any, arg: any) => {
+            if (!isMacOS() || !app.dock) {
+                return;
+            }
+
+            if (arg) {
+                app.dock.setIcon(nativeImage.createFromBuffer(arg));
+            } else {
+                app.dock.setIcon(nativeImage.createFromPath(path.join(globalAny.__static, 'icons/icon.icns')));
             }
         });
 

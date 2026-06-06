@@ -33,6 +33,8 @@ jobs:
                     echo "Linux build failed (attempt $i), retrying in 30s..."
                     sleep 30
                   done
+            - name: repackage AppImage with fuse3 runtime
+              run: bash scripts/repackage-appimage-fuse3.sh release x86_64
             - name: fetch current version
               id: ver_name
               uses: notiz-dev/github-action-json-property@release
@@ -66,10 +68,17 @@ jobs:
             image: archlinux:latest
         steps:
             - uses: actions/checkout@v2
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '22'
+            - name: verify Node runtime
+              run: |
+                  node -v
+                  npm -v
             - name: install Arch dependencies
               run: |
                   pacman -Syu --noconfirm
-                  pacman -S --noconfirm nodejs npm git python base-devel libarchive libxcrypt-compat
+                  pacman -S --noconfirm git python base-devel libarchive libxcrypt-compat
             - name: install dependencies
               run: npm install
             - name: run unit tests

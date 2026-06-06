@@ -476,6 +476,9 @@ export class PlaybackService {
             this._loopPoints = DefaultLoopPoints.createFromTrack(this.audioPlayer.totalSeconds);
         }
 
+        this.applyEffectiveVolumeForCurrentTrack();
+        this.logReplayGainAtTrackStart(trackToPlay);
+
         void this.mediaSessionService.setMetadataAsync(trackToPlay);
 
         this.startUpdatingProgress();
@@ -498,13 +501,16 @@ export class PlaybackService {
             if (this._preloadTimeoutId !== undefined && this._preloadTimeoutId !== null) {
                 clearTimeout(this._preloadTimeoutId);
             }
-            this._preloadTimeoutId = setTimeout(() => {
-                if (this.currentTrack === undefined) {
-                    return;
-                }
-                this._audioPlayer.preloadNext(nextTrack);
-                this.logger.info(`Preloaded '${nextTrack.path}'`, 'PlaybackService', 'preloadNextTrackAfterDelay');
-            }, this.settings.useCrossfade === true ? 500 : 2000);
+            this._preloadTimeoutId = setTimeout(
+                () => {
+                    if (this.currentTrack === undefined) {
+                        return;
+                    }
+                    this._audioPlayer.preloadNext(nextTrack);
+                    this.logger.info(`Preloaded '${nextTrack.path}'`, 'PlaybackService', 'preloadNextTrackAfterDelay');
+                },
+                this.settings.useCrossfade ? 500 : 2000,
+            ); // Preload sooner when using crossfade to ensure crossfade is ready
         }
     }
 
@@ -562,8 +568,13 @@ export class PlaybackService {
         this.stop();
     }
 
-    private playingPreloadedTrackHandler(preloadedTrack: TrackModel): void {
+    private async playingPreloadedTrackHandler(preloadedTrack: TrackModel): Promise<void> {
         this.increasePlayCountAndDateLastPlayedForCurrentTrack();
+
+        if (this.loopMode === LoopMode.One && this.currentTrack != undefined) {
+            await this.playAsync(this.currentTrack, false);
+            return;
+        }
 
         this.postPlay(preloadedTrack, false);
     }
@@ -618,7 +629,7 @@ export class PlaybackService {
         );
         this.subscription.add(
             this.audioPlayer.playingPreloadedTrack$.subscribe((preloadedTrack: TrackModel) => {
-                this.playingPreloadedTrackHandler(preloadedTrack);
+                void this.playingPreloadedTrackHandler(preloadedTrack);
             }),
         );
 
@@ -675,14 +686,122 @@ export class PlaybackService {
 
     private applyVolumeFromSettings(): void {
         this._volume = this.settings.volume;
-        this.audioPlayer.setVolume(this._volume);
+        this.applyEffectiveVolumeForCurrentTrack();
     }
 
     private applyVolume(volume: number): void {
         const volumeToSet: number = this.mathExtensions.clamp(volume, 0, 1);
         this._volume = volumeToSet;
         this.settings.volume = volumeToSet;
-        this.audioPlayer.setVolume(volumeToSet);
+        this.applyEffectiveVolumeForCurrentTrack();
+    }
+
+    private applyEffectiveVolumeForCurrentTrack(): void {
+        const replayGainComputation = this.computeReplayGain(this.currentTrack);
+        const effectiveVolumeBeforeClamp: number = this._volume * replayGainComputation.multiplier;
+        const effectiveVolume: number = Math.max(0, Math.min(1, effectiveVolumeBeforeClamp));
+        this.audioPlayer.setVolume(effectiveVolume);
+    }
+
+    private getReplayGainMultiplier(track: TrackModel | undefined): number {
+        return this.computeReplayGain(track).multiplier;
+    }
+
+    private computeReplayGain(track: TrackModel | undefined): {
+        mode: 'track' | 'album';
+        gainDb: number;
+        peak: number;
+        preAmpDb: number;
+        clippingEnabled: boolean;
+        clippingCap?: number;
+        multiplierBeforeClipping: number;
+        multiplier: number;
+        reason: string;
+    } {
+        const mode: 'track' | 'album' = this.settings.replayGainMode === 'album' ? 'album' : 'track';
+
+        if (track == undefined) {
+            return {
+                mode,
+                gainDb: 0,
+                peak: 0,
+                preAmpDb: this.settings.replayGainPreAmp,
+                clippingEnabled: this.settings.replayGainPreventClipping,
+                multiplierBeforeClipping: 1,
+                multiplier: 1,
+                reason: 'no-track',
+            };
+        }
+
+        if (!this.settings.useReplayGainNormalization) {
+            return {
+                mode,
+                gainDb: mode === 'album' ? track.replayGainAlbumGain : track.replayGainTrackGain,
+                peak: mode === 'album' ? track.replayGainAlbumPeak : track.replayGainTrackPeak,
+                preAmpDb: this.settings.replayGainPreAmp,
+                clippingEnabled: this.settings.replayGainPreventClipping,
+                multiplierBeforeClipping: 1,
+                multiplier: 1,
+                reason: 'normalization-disabled',
+            };
+        }
+
+        const gainDb: number = mode === 'album' ? track.replayGainAlbumGain : track.replayGainTrackGain;
+        const peak: number = mode === 'album' ? track.replayGainAlbumPeak : track.replayGainTrackPeak;
+
+        if (gainDb === 0) {
+            return {
+                mode,
+                gainDb,
+                peak,
+                preAmpDb: this.settings.replayGainPreAmp,
+                clippingEnabled: this.settings.replayGainPreventClipping,
+                multiplierBeforeClipping: 1,
+                multiplier: 1,
+                reason: 'zero-gain',
+            };
+        }
+
+        const preAmpDb: number = this.settings.replayGainPreAmp;
+        const multiplierBeforeClipping: number = Math.pow(10, (gainDb + preAmpDb) / 20);
+        let multiplier: number = multiplierBeforeClipping;
+        let clippingCap: number | undefined;
+        let reason: string = 'applied';
+
+        if (this.settings.replayGainPreventClipping && peak > 0) {
+            clippingCap = 1 / peak;
+            multiplier = Math.min(multiplier, clippingCap);
+            reason = multiplier < multiplierBeforeClipping ? 'applied-with-clipping-cap' : 'applied-no-cap-needed';
+        }
+
+        return {
+            mode,
+            gainDb,
+            peak,
+            preAmpDb,
+            clippingEnabled: this.settings.replayGainPreventClipping,
+            clippingCap,
+            multiplierBeforeClipping,
+            multiplier,
+            reason,
+        };
+    }
+
+    private logReplayGainAtTrackStart(track: TrackModel): void {
+        if (!this.settings.logReplayGainAtTrackStart) {
+            return;
+        }
+
+        const replayGainComputation = this.computeReplayGain(track);
+        const effectiveVolumeBeforeClamp: number = this._volume * replayGainComputation.multiplier;
+        const effectiveVolume: number = Math.max(0, Math.min(1, effectiveVolumeBeforeClamp));
+        const peakAfterGain: number = replayGainComputation.peak * replayGainComputation.multiplier;
+
+        this.logger.info(
+            `ReplayGain start '${track.path}': mode=${replayGainComputation.mode}, gainDb=${replayGainComputation.gainDb}, peak=${replayGainComputation.peak}, peakAfterGain=${peakAfterGain}, preAmpDb=${replayGainComputation.preAmpDb}, preventClipping=${replayGainComputation.clippingEnabled}, multiplierBeforeClipping=${replayGainComputation.multiplierBeforeClipping}, multiplier=${replayGainComputation.multiplier}, clippingCap=${replayGainComputation.clippingCap ?? 'n/a'}, baseVolume=${this._volume}, effectiveVolumeBeforeClamp=${effectiveVolumeBeforeClamp}, effectiveVolume=${effectiveVolume}, reason=${replayGainComputation.reason}`,
+            'PlaybackService',
+            'logReplayGainAtTrackStart',
+        );
     }
 
     private async notifyOfTracksAddedToPlaybackQueueAsync(numberOfAddedTracks: number): Promise<void> {
@@ -818,6 +937,7 @@ export class PlaybackService {
 
                 if (this.currentTrack && this.currentTrack.path === trackInQueue.path) {
                     this.currentTrack = trackInQueue;
+                    this.applyEffectiveVolumeForCurrentTrack();
                     // this.playbackStarted.next(new PlaybackStarted(trackInQueue, false));
                 }
             }
