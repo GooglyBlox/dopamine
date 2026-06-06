@@ -28,7 +28,12 @@ class Indexer {
     async indexCollectionAlwaysAsync() {
         this.logger.info('Indexing collection.', 'Indexer', 'indexCollectionAlwaysAsync');
 
-        await this.trackIndexer.indexTracksAsync(true);
+        // NOTE: Intentional divergence from upstream. Upstream passes `true` here, which forces a full
+        // re-read of every track's tags on every manual Refresh (and on folder changes / artist rename) —
+        // a multi-minute pass for large libraries. We pass `false` so Refresh stays incremental: only new
+        // and changed files (by size / modified-time) are read. ReplayGain for existing songs can still be
+        // backfilled on demand via the dedicated "Refresh ReplayGain" action (reindexReplayGainForExistingTracks).
+        await this.trackIndexer.indexTracksAsync(false);
 
         this.workerProxy.postMessage(new DismissMessage());
     }
