@@ -45,6 +45,15 @@ export class CollectionPlaylistsComponent implements OnInit, OnDestroy {
     public playlists: PlaylistModel[] = [];
     public tracks: TrackModels = new TrackModels();
     public canRemoveFromPlaylist: boolean = true;
+    public source: 'local' | 'spotify' = this.settings.playlistsTabSelectedSource === 'spotify' ? 'spotify' : 'local';
+
+    public setSource(source: 'local' | 'spotify'): void {
+        if (this.source === source) {
+            return;
+        }
+        this.source = source;
+        this.settings.playlistsTabSelectedSource = source;
+    }
 
     public ngOnDestroy(): void {
         this.subscription.unsubscribe();

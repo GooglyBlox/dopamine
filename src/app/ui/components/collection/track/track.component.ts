@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { TrackModel } from '../../../../services/track/track-model';
 import { AppearanceServiceBase } from '../../../../services/appearance/appearance.service.base';
 import { SettingsBase } from '../../../../common/settings/settings.base';
+import { BlacklistService } from '../../../../services/blacklist/blacklist.service';
 
 @Component({
     selector: 'app-track',
@@ -13,6 +14,7 @@ export class TrackComponent {
     public constructor(
         public appearanceService: AppearanceServiceBase,
         public settings: SettingsBase,
+        public blacklistService: BlacklistService,
     ) {}
 
     @Input() public track: TrackModel;

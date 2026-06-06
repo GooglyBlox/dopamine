@@ -28,6 +28,7 @@ import { FollowedArtistsService } from '../../../../../services/release-calendar
 import { MusicBrainzApi } from '../../../../../common/api/musicbrainz/musicbrainz.api';
 import { ReleaseCalendarService } from '../../../../../services/release-calendar/release-calendar.service';
 import { ReleaseNameKey } from '../../../../../services/release-calendar/release-name-key';
+import { BlacklistService } from '../../../../../services/blacklist/blacklist.service';
 
 @Component({
     selector: 'app-artist-browser',
@@ -67,6 +68,7 @@ export class ArtistBrowserComponent implements OnInit, OnDestroy {
         private followedArtistsService: FollowedArtistsService,
         private musicBrainzApi: MusicBrainzApi,
         private releaseCalendarService: ReleaseCalendarService,
+        public blacklistService: BlacklistService,
     ) {}
 
     public shouldZoomOut: boolean = false;
@@ -197,6 +199,22 @@ export class ArtistBrowserComponent implements OnInit, OnDestroy {
         } catch (e: unknown) {
             this.logger.error(e, 'Failed to follow artist', 'ArtistBrowserComponent', 'onToggleFollowArtist');
         }
+    }
+
+    public isArtistBlacklisted(artist: ArtistModel): boolean {
+        if (artist == undefined) {
+            return false;
+        }
+
+        return this.blacklistService.isArtistBlacklisted(artist.name);
+    }
+
+    public onToggleBlacklistArtist(artist: ArtistModel): void {
+        if (artist == undefined) {
+            return;
+        }
+
+        this.blacklistService.toggleArtist(artist.name);
     }
 
     public async onRenameArtistAsync(artist: ArtistModel): Promise<void> {

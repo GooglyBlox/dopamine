@@ -6,12 +6,18 @@
         *ngIf="!artist.isZoomHeader"
         class="app-artist__name ellipsis px-1"
         [ngClass]="{
-            'selected-item-background-important': artist.isSelected
+            'selected-item-background-important': artist.isSelected,
+            'app-artist__name--blacklisted': this.blacklistService.isArtistBlacklisted(artist.name)
         }"
         matRipple
         [matRippleTrigger]="trigger"
         #trigger
     >
+        <i
+            *ngIf="this.blacklistService.isArtistBlacklisted(artist.name)"
+            class="las la-ban app-artist__blacklist-icon"
+            matTooltip="{{ 'blacklisted' | translate }}"
+        ></i>
         {{ artist.displayName }}
     </div>
 </div>

@@ -1,0 +1,55 @@
+.playlists-viewport {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.playlists-source-tabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px 0 12px;
+    flex-shrink: 0;
+}
+
+.playlists-source-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--theme-pane-separators);
+    color: var(--theme-secondary-text);
+    font-size: calc(var(--fontsize) * 0.9);
+    padding: 5px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    & i {
+        font-size: calc(var(--fontsize) * 1.1);
+    }
+
+    &:hover {
+        color: var(--theme-primary-text);
+        border-color: var(--theme-secondary-text);
+    }
+
+    &.is-active {
+        color: var(--theme-button-text);
+        background-color: var(--theme-accent-color);
+        border-color: var(--theme-accent-color);
+    }
+
+    &.playlists-source-chip--spotify.is-active {
+        background-color: #1db954;
+        border-color: #1db954;
+        color: #fff;
+    }
+}
+
+.playlists-source-area {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}

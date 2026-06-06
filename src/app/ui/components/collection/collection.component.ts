@@ -1,4 +1,5 @@
-import { AfterViewInit, Component, HostListener, ViewEncapsulation } from '@angular/core';
+import { AfterViewInit, Component, HostListener, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { AppearanceServiceBase } from '../../../services/appearance/appearance.service.base';
 import { SettingsBase } from '../../../common/settings/settings.base';
 import { AudioVisualizer } from '../../../services/playback/audio-visualizer';
@@ -17,7 +18,9 @@ import { PlaybackService } from '../../../services/playback/playback.service';
     encapsulation: ViewEncapsulation.None,
     animations: [enterLeftToRight, enterRightToLeft],
 })
-export class CollectionComponent extends AnimatedPage implements AfterViewInit {
+export class CollectionComponent extends AnimatedPage implements AfterViewInit, OnInit, OnDestroy {
+    private subscription: Subscription = new Subscription();
+
     public constructor(
         public appearanceService: AppearanceServiceBase,
         public collectionNavigationService: CollectionNavigationService,
@@ -29,6 +32,19 @@ export class CollectionComponent extends AnimatedPage implements AfterViewInit {
     ) {
         super();
         this.page = this.collectionNavigationService.page;
+    }
+
+    public ngOnInit(): void {
+        this.subscription.add(
+            this.collectionNavigationService.navigateRequest$.subscribe((page: number) => {
+                this.previousPage = this.page;
+                this.page = page;
+            }),
+        );
+    }
+
+    public ngOnDestroy(): void {
+        this.subscription.unsubscribe();
     }
 
     @HostListener('document:keyup', ['$event'])

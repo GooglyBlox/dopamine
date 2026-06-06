@@ -37,6 +37,7 @@ export class Track {
         this.composers = '';
         this.conductor = '';
         this.beatsPerMinute = 0;
+        this.isBlacklisted = 0;
     }
 
     public trackId: number;
@@ -76,4 +77,5 @@ export class Track {
     public composers: string | undefined;
     public conductor: string | undefined;
     public beatsPerMinute: number | undefined;
+    public isBlacklisted: number | undefined;
 }

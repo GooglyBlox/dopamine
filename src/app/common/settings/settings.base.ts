@@ -101,4 +101,13 @@ export abstract class SettingsBase {
     public abstract showReleasesPage: boolean;
     public abstract releaseCalendarSyncIntervalHours: number;
     public abstract releaseCalendarLastFullSyncAt: number;
+    public abstract spotifyClientId: string;
+    public abstract spotifyAccessToken: string;
+    public abstract spotifyRefreshToken: string;
+    public abstract spotifyTokenExpiresAt: number;
+    public abstract spotifyUserDisplayName: string;
+    public abstract spotifyImportedPlaylistIds: string;
+    public abstract spotifyPastedPlaylists: string;
+    public abstract playlistsTabSelectedSource: string;
+    public abstract playlistsTabSelectedSpotifyPlaylist: string;
 }

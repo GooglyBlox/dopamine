@@ -955,4 +955,94 @@ export class Settings implements SettingsBase {
     public set releaseCalendarLastFullSyncAt(v: number) {
         this.set('releaseCalendarLastFullSyncAt', v);
     }
+
+    // spotifyClientId
+    public get spotifyClientId(): string {
+        const val = this.get<string>('spotifyClientId');
+        return val ?? '';
+    }
+
+    public set spotifyClientId(v: string) {
+        this.set('spotifyClientId', v);
+    }
+
+    // spotifyAccessToken
+    public get spotifyAccessToken(): string {
+        const val = this.get<string>('spotifyAccessToken');
+        return val ?? '';
+    }
+
+    public set spotifyAccessToken(v: string) {
+        this.set('spotifyAccessToken', v);
+    }
+
+    // spotifyRefreshToken
+    public get spotifyRefreshToken(): string {
+        const val = this.get<string>('spotifyRefreshToken');
+        return val ?? '';
+    }
+
+    public set spotifyRefreshToken(v: string) {
+        this.set('spotifyRefreshToken', v);
+    }
+
+    // spotifyTokenExpiresAt
+    public get spotifyTokenExpiresAt(): number {
+        const val = this.get<number>('spotifyTokenExpiresAt');
+        return val ?? 0;
+    }
+
+    public set spotifyTokenExpiresAt(v: number) {
+        this.set('spotifyTokenExpiresAt', v);
+    }
+
+    // spotifyUserDisplayName
+    public get spotifyUserDisplayName(): string {
+        const val = this.get<string>('spotifyUserDisplayName');
+        return val ?? '';
+    }
+
+    public set spotifyUserDisplayName(v: string) {
+        this.set('spotifyUserDisplayName', v);
+    }
+
+    // spotifyImportedPlaylistIds (semicolon-delimited)
+    public get spotifyImportedPlaylistIds(): string {
+        const val = this.get<string>('spotifyImportedPlaylistIds');
+        return val ?? '';
+    }
+
+    public set spotifyImportedPlaylistIds(v: string) {
+        this.set('spotifyImportedPlaylistIds', v);
+    }
+
+    // spotifyPastedPlaylists (JSON string)
+    public get spotifyPastedPlaylists(): string {
+        const val = this.get<string>('spotifyPastedPlaylists');
+        return val ?? '';
+    }
+
+    public set spotifyPastedPlaylists(v: string) {
+        this.set('spotifyPastedPlaylists', v);
+    }
+
+    // playlistsTabSelectedSource
+    public get playlistsTabSelectedSource(): string {
+        const val = this.get<string>('playlistsTabSelectedSource');
+        return val ?? 'local';
+    }
+
+    public set playlistsTabSelectedSource(v: string) {
+        this.set('playlistsTabSelectedSource', v);
+    }
+
+    // playlistsTabSelectedSpotifyPlaylist
+    public get playlistsTabSelectedSpotifyPlaylist(): string {
+        const val = this.get<string>('playlistsTabSelectedSpotifyPlaylist');
+        return val ?? '';
+    }
+
+    public set playlistsTabSelectedSpotifyPlaylist(v: string) {
+        this.set('playlistsTabSelectedSpotifyPlaylist', v);
+    }
 }

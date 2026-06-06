@@ -63,6 +63,10 @@
         <button mat-menu-item (click)="onToggleFollowArtist(artist)">
             <span>{{ this.isArtistFollowed(artist) ? ('unfollow-artist' | translate) : ('follow-artist' | translate) }}</span>
         </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="onToggleBlacklistArtist(artist)">
+            <span>{{ this.isArtistBlacklisted(artist) ? ('remove-from-blacklist' | translate) : ('blacklist-artist' | translate) }}</span>
+        </button>
     </ng-template>
 </mat-menu>
 

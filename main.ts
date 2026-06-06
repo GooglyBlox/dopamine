@@ -19,6 +19,12 @@ import { SensitiveInformation } from './main/common/application/sensitive-inform
 import { DiscordApiCommand } from './main/api/discord/discord-api-command';
 import { DiscordApiCommandType } from './main/api/discord/discord-api-command-type';
 import { SettingsStore } from './main/common/settings/settings-store';
+import {
+    cancelSpotifyAuthFlow,
+    refreshAccessToken,
+    runSpotifyAuthFlow,
+    SPOTIFY_REDIRECT_URI,
+} from './main/api/spotify/spotify-auth';
 
 /**
  * Command line parameters
@@ -698,6 +704,33 @@ try {
                 return await openCoverPicker(args.artist, args.album);
             },
         );
+
+        ipcMain.handle('spotify:redirect-uri', () => SPOTIFY_REDIRECT_URI);
+
+        ipcMain.handle('spotify:authorize', async (_, args: { clientId: string }) => {
+            try {
+                const tokens = await runSpotifyAuthFlow(args.clientId);
+                return { ok: true, ...tokens };
+            } catch (e: any) {
+                log.warn(`[Main] [spotify:authorize] ${e?.message ?? e}`);
+                return { ok: false, error: e?.message ?? String(e) };
+            }
+        });
+
+        ipcMain.handle('spotify:cancel-authorize', () => {
+            cancelSpotifyAuthFlow();
+            return { ok: true };
+        });
+
+        ipcMain.handle('spotify:refresh', async (_, args: { clientId: string; refreshToken: string }) => {
+            try {
+                const tokens = await refreshAccessToken(args.clientId, args.refreshToken);
+                return { ok: true, ...tokens };
+            } catch (e: any) {
+                log.warn(`[Main] [spotify:refresh] ${e?.message ?? e}`);
+                return { ok: false, error: e?.message ?? String(e) };
+            }
+        });
     }
 } catch (e) {
     log.error(`[Main] [Main] Could not start. Error: ${e.message}`);

@@ -1,29 +1,54 @@
-<div class="collection-viewport">
-    <as-split gutterSize="4" unit="percent" direction="horizontal" (dragEnd)="splitDragEnd($event)">
-        <as-split-area [size]="leftPaneSize" minSize="5" maxSize="95"
-            ><div class="left-side-pane">
-                <app-playlist-folder-browser
+<div class="collection-viewport playlists-viewport">
+    <div class="playlists-source-tabs">
+        <button
+            class="playlists-source-chip"
+            [class.is-active]="source === 'local'"
+            (click)="setSource('local')"
+        >
+            <i class="las la-folder"></i>
+            <span>{{ 'playlists-source-local' | translate }}</span>
+        </button>
+        <button
+            class="playlists-source-chip playlists-source-chip--spotify"
+            [class.is-active]="source === 'spotify'"
+            (click)="setSource('spotify')"
+        >
+            <i class="lab la-spotify"></i>
+            <span>{{ 'playlists-source-spotify' | translate }}</span>
+        </button>
+    </div>
+
+    <div class="playlists-source-area" *ngIf="source === 'local'">
+        <as-split gutterSize="4" unit="percent" direction="horizontal" (dragEnd)="splitDragEnd($event)">
+            <as-split-area [size]="leftPaneSize" minSize="5" maxSize="95"
+                ><div class="left-side-pane">
+                    <app-playlist-folder-browser
+                        class="p-3 fill"
+                        [(playlistFoldersPersister)]="this.playlistFoldersPersister"
+                        [playlistFolders]="this.playlistFolders"
+                    ></app-playlist-folder-browser></div
+            ></as-split-area>
+            <as-split-area [size]="centerPaneSize" minSize="5" maxSize="95">
+                <app-playlist-browser
                     class="p-3 fill"
-                    [(playlistFoldersPersister)]="this.playlistFoldersPersister"
-                    [playlistFolders]="this.playlistFolders"
-                ></app-playlist-folder-browser></div
-        ></as-split-area>
-        <as-split-area [size]="centerPaneSize" minSize="5" maxSize="95">
-            <app-playlist-browser
-                class="p-3 fill"
-                [playlists]="this.playlists | playlistsFilter: this.searchService.delayedSearchText"
-                [(playlistsPersister)]="this.playlistsPersister"
-            ></app-playlist-browser>
-        </as-split-area>
-        <as-split-area [size]="rightPaneSize" minSize="5" maxSize="95"
-            ><div class="right-side-pane">
-                <app-playlist-track-browser
-                    class="p-3 fill"
-                    [tracks]="this.tracks | tracksFilter: this.searchService.delayedSearchText"
-                    [(tracksPersister)]="this.tracksPersister"
-                    [canReorder]="!this.searchService.delayedSearchText"
-                    [canRemoveFromPlaylist]="this.canRemoveFromPlaylist"
-                ></app-playlist-track-browser></div
-        ></as-split-area>
-    </as-split>
+                    [playlists]="this.playlists | playlistsFilter: this.searchService.delayedSearchText"
+                    [(playlistsPersister)]="this.playlistsPersister"
+                ></app-playlist-browser>
+            </as-split-area>
+            <as-split-area [size]="rightPaneSize" minSize="5" maxSize="95"
+                ><div class="right-side-pane">
+                    <app-playlist-track-browser
+                        class="p-3 fill"
+                        [tracks]="this.tracks | tracksFilter: this.searchService.delayedSearchText"
+                        [(tracksPersister)]="this.tracksPersister"
+                        [canReorder]="!this.searchService.delayedSearchText"
+                        [canRemoveFromPlaylist]="this.canRemoveFromPlaylist"
+                    ></app-playlist-track-browser></div
+            ></as-split-area>
+        </as-split>
+    </div>
+
+    <div class="playlists-source-area" *ngIf="source === 'spotify'">
+        <app-spotify-playlists></app-spotify-playlists>
+    </div>
 </div>

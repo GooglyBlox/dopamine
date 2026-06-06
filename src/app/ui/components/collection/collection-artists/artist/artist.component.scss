@@ -26,3 +26,13 @@
 .app-artist__name:hover {
     background: var(--theme-hovered-item-background);
 }
+
+.app-artist__name--blacklisted {
+    opacity: 0.45;
+}
+
+.app-artist__blacklist-icon {
+    margin-right: 4px;
+    font-size: 0.95em;
+    vertical-align: middle;
+}

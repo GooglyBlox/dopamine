@@ -230,6 +230,25 @@ export class TrackService implements TrackServiceBase {
         this.trackRepository.updateSkipCount(track.id, track.skipCount);
     }
 
+    public saveTrackBlacklist(track: TrackModel, isBlacklisted: boolean): void {
+        track.isBlacklisted = isBlacklisted;
+        this.trackRepository.updateBlacklisted(track.id, isBlacklisted ? 1 : 0);
+    }
+
+    public getBlacklistedTracks(): TrackModels {
+        const tracks: Track[] = this.trackRepository.getBlacklistedTracks() ?? [];
+        const trackModels: TrackModels = new TrackModels();
+
+        const albumKeyIndex: string = this.settings.albumKeyIndex;
+
+        for (const track of tracks) {
+            const trackModel: TrackModel = this.trackModelFactory.createFromTrack(track, albumKeyIndex);
+            trackModels.addTrack(trackModel);
+        }
+
+        return trackModels;
+    }
+
     public scrollToPlayingTrack(tracks: TrackModel[], viewPort: CdkVirtualScrollViewport): void {
         if (!this.settings.jumpToPlayingSong) {
             return;

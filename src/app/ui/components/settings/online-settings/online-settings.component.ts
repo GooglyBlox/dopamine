@@ -89,6 +89,14 @@ export class OnlineSettingsComponent implements OnInit, OnDestroy {
         await this.scrobblingService.signInAsync();
     }
 
+    public get spotifyClientId(): string {
+        return this.settings.spotifyClientId;
+    }
+
+    public set spotifyClientId(v: string) {
+        this.settings.spotifyClientId = (v ?? '').trim();
+    }
+
     public get checkForUpdates(): boolean {
         return this.settings.checkForUpdates;
     }

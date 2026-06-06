@@ -9,6 +9,16 @@
     background: var(--theme-hovered-item-background);
 }
 
+.app-track__body--blacklisted {
+    opacity: 0.45;
+}
+
+.app-track__blacklist-icon {
+    margin-right: 4px;
+    font-size: 0.95em;
+    vertical-align: middle;
+}
+
 .app-track__left {
     display: flex;
     width: 40px;

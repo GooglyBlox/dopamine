@@ -23,6 +23,7 @@ import { PlaybackService } from '../../../../services/playback/playback.service'
 import { MetadataService } from '../../../../services/metadata/metadata.service';
 import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { TrackServiceBase } from '../../../../services/track/track.service.base';
+import { BlacklistService } from '../../../../services/blacklist/blacklist.service';
 
 @Component({
     selector: 'app-track-browser',
@@ -52,6 +53,7 @@ export class TrackBrowserComponent extends TrackBrowserBase implements OnInit, O
         dialogService: DialogServiceBase,
         desktop: DesktopBase,
         logger: Logger,
+        blacklistService: BlacklistService,
     ) {
         super(
             playbackService,
@@ -63,6 +65,7 @@ export class TrackBrowserComponent extends TrackBrowserBase implements OnInit, O
             collectionService,
             translatorService,
             desktop,
+            blacklistService,
         );
     }
 

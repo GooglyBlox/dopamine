@@ -26,6 +26,8 @@ export abstract class TrackRepositoryBase {
     public abstract updateSkipCount(trackId: number, skipCount: number): void;
     public abstract updateRating(trackId: number, rating: number): void;
     public abstract updateLove(trackId: number, love: number): void;
+    public abstract updateBlacklisted(trackId: number, isBlacklisted: number): void;
+    public abstract getBlacklistedTracks(): Track[] | undefined;
     public abstract getLastModifiedTrackForAlbumKeyAsync(albumKeyIndex: string, albumKey: string): Track | undefined;
     public abstract disableNeedsAlbumArtworkIndexing(albumKey: string): void;
     public abstract updateTrack(track: Track): void;

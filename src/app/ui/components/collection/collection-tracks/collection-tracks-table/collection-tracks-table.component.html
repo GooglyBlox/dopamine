@@ -115,13 +115,21 @@
             <tr
                 *cdkVirtualFor="let track of this.orderedTracks"
                 class="tracks-table-row"
-                [ngClass]="{ 'selected-item-background-important': track.isSelected }"
+                [ngClass]="{
+                    'selected-item-background-important': track.isSelected,
+                    'tracks-table-row--blacklisted': this.blacklistService.isBlacklisted(track)
+                }"
                 (mousedown)="setSelectedTracks($event, track)"
                 (dblclick)="playbackService.enqueueAndPlayTracksStartingFromGivenTrackAsync(this.orderedTracks, track)"
                 (contextmenu)="onTrackContextMenu($event, track)"
             >
                 <td>
                     <div class="ellipsis" [ngClass]="{ 'accent-color': track.isPlaying }">
+                        <i
+                            *ngIf="this.blacklistService.isBlacklisted(track)"
+                            class="las la-ban"
+                            matTooltip="{{ 'blacklisted' | translate }}"
+                        ></i>
                         {{ track.title }}
                     </div>
                 </td>
@@ -204,6 +212,10 @@
         </button>
         <button mat-menu-item (click)="onAddToQueueAsync()">
             <span>{{ 'add-to-playback-queue' | translate }}</span>
+        </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="onToggleBlacklist()">
+            <span>{{ this.isSelectionBlacklisted() ? ('remove-from-blacklist' | translate) : ('blacklist-song' | translate) }}</span>
         </button>
         <mat-divider></mat-divider>
         <button mat-menu-item (click)="onShowInFolder()">

@@ -23,6 +23,24 @@
         </app-toggle-switch>
     </div>
     <mat-divider class="my-4"></mat-divider>
+    <div class="title">{{ 'spotify' | translate }}</div>
+    <div class="secondary-text mb-2" style="max-width: 540px">
+        {{ 'spotify-settings-desc' | translate }}
+    </div>
+    <div class="secondary-text mb-2" style="font-size: calc(var(--fontsize) * 0.85)">
+        {{ 'spotify-settings-redirect' | translate }}
+        <code style="font-family: monospace">http://127.0.0.1:8888/spotify-callback</code>
+    </div>
+    <div>
+        <mat-form-field style="min-width: 360px">
+            <input
+                [(ngModel)]="this.spotifyClientId"
+                matInput
+                placeholder="{{ 'spotify-client-id' | translate }}"
+            />
+        </mat-form-field>
+    </div>
+    <mat-divider class="my-4"></mat-divider>
     <div class="title">{{ 'last-fm' | translate }}</div>
     <div>
         <app-toggle-switch [(isChecked)]="this.settings.downloadArtistInformationFromLastFm">

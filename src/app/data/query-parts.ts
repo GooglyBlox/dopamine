@@ -88,7 +88,8 @@ export class QueryParts {
                                                              t.DateLastPlayed AS dateLastPlayed,
                                                              t.Composers AS composers,
                                                              t.Conductor AS conductor,
-                                                             t.BeatsPerMinute AS beatsPerMinute
+                                                             t.BeatsPerMinute AS beatsPerMinute,
+                                                             t.IsBlacklisted AS isBlacklisted
                                                              FROM Track t`;
 
         if (onlyVisibleTracks) {

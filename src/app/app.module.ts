@@ -139,6 +139,7 @@ import { AdvancedSettingsComponent } from './ui/components/settings/advanced-set
 import { AppearanceSettingsComponent } from './ui/components/settings/appearance-settings/appearance-settings.component';
 import { BehaviorSettingsComponent } from './ui/components/settings/behavior-settings/behavior-settings.component';
 import { OnlineSettingsComponent } from './ui/components/settings/online-settings/online-settings.component';
+import { BlacklistSettingsComponent } from './ui/components/settings/blacklist-settings/blacklist-settings.component';
 import { SettingsComponent } from './ui/components/settings/settings.component';
 import { SliderComponent } from './ui/components/slider/slider.component';
 import { StepIndicatorComponent } from './ui/components/step-indicator/step-indicator.component';
@@ -315,6 +316,7 @@ import { ReleaseCalendarRepositoryBase } from './data/repositories/release-calen
 import { ReleaseCalendarRepository } from './data/repositories/release-calendar-repository';
 import { ArtistMbidPickerDialogComponent } from './ui/components/dialogs/artist-mbid-picker-dialog/artist-mbid-picker-dialog.component';
 import { FollowedArtistsDialogComponent } from './ui/components/dialogs/followed-artists-dialog/followed-artists-dialog.component';
+import { SpotifyPlaylistsComponent } from './ui/components/collection/collection-playlists/spotify-playlists/spotify-playlists.component';
 
 export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
     return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -390,6 +392,7 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         AppearanceSettingsComponent,
         AdvancedSettingsComponent,
         OnlineSettingsComponent,
+        BlacklistSettingsComponent,
         BehaviorSettingsComponent,
         AboutComponent,
         ComponentsComponent,
@@ -490,6 +493,7 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         CollectionReleasesComponent,
         ArtistMbidPickerDialogComponent,
         FollowedArtistsDialogComponent,
+        SpotifyPlaylistsComponent,
     ],
     imports: [
         BrowserAnimationsModule,

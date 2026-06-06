@@ -1,0 +1,410 @@
+<div class="spotify-root">
+    <div class="spotify-topbar" *ngIf="isConnected || errorMessage.length > 0">
+        <div class="spotify-topbar__brand">
+            <i class="lab la-spotify spotify-topbar__brand-icon"></i>
+            <div class="spotify-topbar__brand-text">
+                <div class="spotify-topbar__title">{{ 'spotify-imports-title' | translate }}</div>
+                <div class="spotify-topbar__sub" *ngIf="isConnected && userDisplayName.length > 0">
+                    <i class="las la-user-circle"></i>
+                    <span>{{ userDisplayName }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="spotify-topbar__actions" *ngIf="isConnected">
+            <button
+                class="spotify-chip"
+                [class.is-active]="showAllPlaylists"
+                (click)="toggleShowAll()"
+                [disabled]="isLoadingPlaylists"
+                matTooltip="{{ 'spotify-show-all-tooltip' | translate }}"
+            >
+                <i class="las la-list"></i>
+                <span>{{ showAllPlaylists ? ('spotify-show-algorithmic' | translate) : ('spotify-show-all' | translate) }}</span>
+            </button>
+            <button class="spotify-icon-btn" (click)="refreshPlaylists()" [disabled]="isLoadingPlaylists" matTooltip="{{ 'spotify-refresh' | translate }}">
+                <i class="las la-sync-alt" [class.rotating]="isLoadingPlaylists"></i>
+            </button>
+            <button class="spotify-icon-btn" (click)="disconnect()" matTooltip="{{ 'spotify-disconnect' | translate }}">
+                <i class="las la-sign-out-alt"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="spotify-error" *ngIf="errorMessage.length > 0">
+        <i class="las la-exclamation-triangle"></i>
+        <span>{{ errorMessage }}</span>
+    </div>
+
+    <div class="spotify-empty" *ngIf="!isConnected">
+        <div class="spotify-empty__card">
+            <div class="spotify-empty__logo-wrap">
+                <i class="lab la-spotify"></i>
+            </div>
+            <h2 class="spotify-empty__title">{{ 'spotify-connect-title' | translate }}</h2>
+            <p class="spotify-empty__desc">{{ 'spotify-connect-desc' | translate }}</p>
+
+            <div *ngIf="!hasClientId" class="spotify-missing-client">
+                <i class="las la-info-circle"></i>
+                <span>{{ 'spotify-missing-client-id' | translate }}</span>
+            </div>
+
+            <button *ngIf="hasClientId && !isAuthorizing" class="spotify-connect-btn" (click)="connect()">
+                <i class="lab la-spotify"></i>
+                <span>{{ 'spotify-connect' | translate }}</span>
+            </button>
+            <div *ngIf="hasClientId && isAuthorizing" class="spotify-authorizing">
+                <div class="spotify-authorizing__msg">
+                    <i class="las la-external-link-alt"></i>
+                    <span>{{ 'spotify-browser-opened' | translate }}</span>
+                </div>
+                <button class="spotify-chip" (click)="cancelConnect()">
+                    {{ 'spotify-cancel-connect' | translate }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="spotify-content" *ngIf="isConnected">
+        <aside class="spotify-pane spotify-pane--list">
+            <div class="spotify-pane__head">
+                <div class="spotify-pane__head-left">
+                    <span class="spotify-pane__title">{{ 'spotify-playlists' | translate }}</span>
+                    <span class="spotify-pane__count" *ngIf="playlists.length > 0">{{ playlists.length }}</span>
+                </div>
+                <div class="spotify-pane__head-actions">
+                    <button
+                        class="spotify-icon-btn spotify-icon-btn--small"
+                        [class.is-active]="importMode === 'link'"
+                        (click)="openImport('link')"
+                        matTooltip="{{ 'spotify-import-playlist-link' | translate }}"
+                    >
+                        <i class="las la-link"></i>
+                    </button>
+                    <button
+                        class="spotify-icon-btn spotify-icon-btn--small"
+                        [class.is-active]="importMode === 'paste'"
+                        (click)="openImport('paste')"
+                        matTooltip="{{ 'spotify-import-playlist-paste' | translate }}"
+                    >
+                        <i class="las la-paste"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="spotify-import-bar" *ngIf="importMode === 'link'">
+                <div class="spotify-import-bar__hint">{{ 'spotify-import-hint-link' | translate }}</div>
+                <div class="spotify-import-bar__row">
+                    <input
+                        class="spotify-import-bar__input"
+                        type="text"
+                        [(ngModel)]="importInput"
+                        (keyup.enter)="submitLinkImport()"
+                        placeholder="https://open.spotify.com/playlist/..."
+                        [disabled]="isImporting"
+                    />
+                </div>
+                <div class="spotify-import-bar__row spotify-import-bar__row--actions">
+                    <div class="spotify-import-bar__spacer"></div>
+                    <button class="spotify-chip" (click)="closeImport()" [disabled]="isImporting">
+                        <span>{{ 'spotify-cancel-connect' | translate }}</span>
+                    </button>
+                    <button
+                        class="spotify-chip is-active"
+                        (click)="submitLinkImport()"
+                        [disabled]="isImporting || importInput.trim().length === 0"
+                    >
+                        <i class="las la-plus"></i>
+                        <span>{{ isImporting ? ('spotify-importing' | translate) : ('spotify-import' | translate) }}</span>
+                    </button>
+                </div>
+                <div class="spotify-import-bar__error" *ngIf="importError.length > 0">
+                    <i class="las la-exclamation-triangle"></i>
+                    <span>{{ ('spotify-import-error-' + importError) | translate }}</span>
+                </div>
+            </div>
+
+            <div class="spotify-import-bar" *ngIf="importMode === 'edit'">
+                <div class="spotify-import-bar__hint">{{ 'spotify-edit-hint' | translate }}</div>
+                <input
+                    class="spotify-import-bar__input"
+                    type="text"
+                    [(ngModel)]="editName"
+                    placeholder="{{ 'spotify-paste-name-placeholder' | translate }}"
+                    [disabled]="isImporting"
+                />
+                <div class="spotify-edit-cover-row">
+                    <div class="spotify-edit-cover-preview">
+                        <img *ngIf="editCoverUrl.length > 0" [src]="editCoverUrl" alt="" />
+                        <i *ngIf="editCoverUrl.length === 0" class="las la-image"></i>
+                    </div>
+                    <div class="spotify-edit-cover-controls">
+                        <input
+                            class="spotify-import-bar__input"
+                            type="text"
+                            [(ngModel)]="editCoverUrl"
+                            placeholder="{{ 'spotify-edit-cover-url-placeholder' | translate }}"
+                            [disabled]="isImporting"
+                        />
+                        <div class="spotify-edit-cover-buttons">
+                            <label class="spotify-chip spotify-chip--file">
+                                <i class="las la-file-upload"></i>
+                                <span>{{ 'spotify-edit-upload-cover' | translate }}</span>
+                                <input type="file" accept="image/*" (change)="onEditCoverFileSelected($event)" [disabled]="isImporting" hidden />
+                            </label>
+                            <button class="spotify-chip" *ngIf="editCoverUrl.length > 0" (click)="clearEditCover()" [disabled]="isImporting">
+                                <i class="las la-times"></i>
+                                <span>{{ 'spotify-edit-clear-cover' | translate }}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="spotify-import-bar__row spotify-import-bar__row--actions">
+                    <div class="spotify-import-bar__spacer"></div>
+                    <button class="spotify-chip" (click)="closeImport()" [disabled]="isImporting">
+                        <span>{{ 'spotify-cancel-connect' | translate }}</span>
+                    </button>
+                    <button class="spotify-chip is-active" (click)="submitEdit()" [disabled]="isImporting || editName.trim().length === 0">
+                        <i class="las la-check"></i>
+                        <span>{{ isImporting ? ('spotify-importing' | translate) : ('spotify-edit-save' | translate) }}</span>
+                    </button>
+                </div>
+                <div class="spotify-import-bar__error" *ngIf="importError.length > 0">
+                    <i class="las la-exclamation-triangle"></i>
+                    <span>{{ ('spotify-import-error-' + importError) | translate }}</span>
+                </div>
+            </div>
+
+            <div class="spotify-import-bar" *ngIf="importMode === 'paste'">
+                <div class="spotify-import-bar__hint">{{ 'spotify-import-hint-paste' | translate }}</div>
+                <input
+                    class="spotify-import-bar__input"
+                    type="text"
+                    [(ngModel)]="pasteName"
+                    placeholder="{{ 'spotify-paste-name-placeholder' | translate }}"
+                    [disabled]="isImporting"
+                />
+                <textarea
+                    class="spotify-import-bar__textarea"
+                    [(ngModel)]="pasteText"
+                    rows="8"
+                    placeholder="{{ 'spotify-paste-text-placeholder' | translate }}"
+                    [disabled]="isImporting"
+                ></textarea>
+                <div class="spotify-import-bar__row spotify-import-bar__row--actions">
+                    <label class="spotify-chip spotify-chip--file">
+                        <i class="las la-file-upload"></i>
+                        <span>{{ 'spotify-paste-upload-csv' | translate }}</span>
+                        <input type="file" accept=".csv,.tsv,.txt" (change)="onCsvFileSelected($event)" [disabled]="isImporting" hidden />
+                    </label>
+                    <div class="spotify-import-bar__spacer"></div>
+                    <button class="spotify-chip" (click)="closeImport()" [disabled]="isImporting">
+                        <span>{{ 'spotify-cancel-connect' | translate }}</span>
+                    </button>
+                    <button
+                        class="spotify-chip is-active"
+                        (click)="submitPasteImport()"
+                        [disabled]="isImporting || pasteName.trim().length === 0 || pasteText.trim().length === 0"
+                    >
+                        <i class="las la-check"></i>
+                        <span>{{ isImporting ? ('spotify-importing' | translate) : ('spotify-paste-save' | translate) }}</span>
+                    </button>
+                </div>
+                <div class="spotify-import-bar__error" *ngIf="importError.length > 0">
+                    <i class="las la-exclamation-triangle"></i>
+                    <span>{{ ('spotify-import-error-' + importError) | translate }}</span>
+                </div>
+            </div>
+
+            <div class="spotify-loading" *ngIf="isLoadingPlaylists && playlists.length === 0">
+                <i class="las la-sync-alt rotating"></i>
+                <span>{{ 'spotify-loading' | translate }}</span>
+            </div>
+
+            <div class="spotify-empty-list" *ngIf="!isLoadingPlaylists && playlists.length === 0">
+                <i class="las la-compact-disc spotify-empty-list__icon"></i>
+                <div class="spotify-empty-list__title">{{ 'spotify-no-playlists' | translate }}</div>
+                <div class="spotify-empty-list__hint">{{ 'spotify-no-playlists-hint' | translate }}</div>
+                <button class="spotify-chip is-active" (click)="openImport('paste')" *ngIf="importMode === 'closed'">
+                    <i class="las la-plus"></i>
+                    <span>{{ 'spotify-import-playlist' | translate }}</span>
+                </button>
+            </div>
+
+            <div class="spotify-playlist-list" *ngIf="playlists.length > 0">
+                <div
+                    *ngFor="let playlist of playlists"
+                    class="spotify-playlist-item"
+                    [class.is-selected]="selectedPlaylistId === playlist.summary.id"
+                    (click)="selectPlaylist(playlist.summary.id)"
+                >
+                    <div class="spotify-playlist-item__cover">
+                        <img *ngIf="playlist.summary.imageUrl" [src]="playlist.summary.imageUrl" alt="" />
+                        <i *ngIf="!playlist.summary.imageUrl" class="las la-music"></i>
+                    </div>
+                    <div class="spotify-playlist-item__body">
+                        <div class="spotify-playlist-item__name">{{ playlist.summary.name }}</div>
+                        <div class="spotify-playlist-item__meta">
+                            <span>{{ playlist.summary.trackCount }} {{ 'spotify-tracks' | translate }}</span>
+                            <span class="spotify-tag" *ngIf="playlist.isPasted">{{ 'spotify-tag-pasted' | translate }}</span>
+                            <span class="spotify-tag spotify-tag--green" *ngIf="playlist.isAlgorithmic && !playlist.isPasted">{{ 'spotify-tag-made-for-you' | translate }}</span>
+                        </div>
+                    </div>
+                    <div class="spotify-playlist-item__actions">
+                        <button
+                            *ngIf="playlist.isPasted"
+                            class="spotify-playlist-item__action"
+                            (click)="openEdit(playlist, $event)"
+                            matTooltip="{{ 'spotify-edit-playlist' | translate }}"
+                        >
+                            <i class="las la-pen"></i>
+                        </button>
+                        <button
+                            *ngIf="playlist.isImported || playlist.isPasted"
+                            class="spotify-playlist-item__action spotify-playlist-item__action--danger"
+                            (click)="removePlaylist(playlist, $event)"
+                            matTooltip="{{ 'spotify-remove-import' | translate }}"
+                        >
+                            <i class="las la-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <section class="spotify-pane spotify-pane--detail">
+            <div class="spotify-loading" *ngIf="isLoadingTracks && !currentDetail">
+                <i class="las la-sync-alt rotating"></i>
+                <span>{{ 'spotify-loading-tracks' | translate }}</span>
+            </div>
+
+            <div class="spotify-detail-empty" *ngIf="!isLoadingTracks && !currentDetail && selectedPlaylistId.length === 0">
+                <i class="las la-record-vinyl"></i>
+                <div class="spotify-detail-empty__title">{{ 'spotify-select-playlist-title' | translate }}</div>
+                <div class="spotify-detail-empty__desc">{{ 'spotify-select-playlist' | translate }}</div>
+            </div>
+
+            <ng-container *ngIf="currentDetail">
+                <div class="spotify-detail-hero">
+                    <div class="spotify-detail-hero__cover">
+                        <img *ngIf="currentDetail.summary.imageUrl" [src]="currentDetail.summary.imageUrl" alt="" />
+                        <i *ngIf="!currentDetail.summary.imageUrl" class="las la-music"></i>
+                    </div>
+                    <div class="spotify-detail-hero__info">
+                        <div class="spotify-detail-hero__eyebrow">{{ 'spotify-eyebrow-playlist' | translate }}</div>
+                        <h1 class="spotify-detail-hero__title">{{ currentDetail.summary.name }}</h1>
+                        <div class="spotify-detail-hero__byline" *ngIf="currentDetail.summary.ownerDisplayName.length > 0">
+                            {{ currentDetail.summary.ownerDisplayName }}
+                        </div>
+                        <div class="spotify-detail-hero__stats">
+                            <span class="spotify-detail-stat">
+                                <i class="las la-list-ol"></i>
+                                {{ currentDetail.tracks.length }} {{ 'spotify-tracks' | translate }}
+                            </span>
+                            <span class="spotify-detail-stat spotify-detail-stat--present">
+                                <i class="las la-check-circle"></i>
+                                {{ currentDetail.presentCount }} {{ 'spotify-in-library' | translate }}
+                            </span>
+                            <span class="spotify-detail-stat spotify-detail-stat--missing" *ngIf="currentDetail.missingCount > 0">
+                                <i class="las la-times-circle"></i>
+                                {{ currentDetail.missingCount }} {{ 'spotify-missing' | translate }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="spotify-detail-toolbar">
+                    <button
+                        class="spotify-play-fab"
+                        [disabled]="!hasPlayableTracks()"
+                        (click)="playAllMatched()"
+                        matTooltip="{{ 'spotify-play-matched' | translate }}"
+                    >
+                        <i class="las la-play"></i>
+                    </button>
+                    <button
+                        class="spotify-icon-btn spotify-icon-btn--lg"
+                        (click)="refreshCurrentDetail()"
+                        [disabled]="isLoadingTracks"
+                        matTooltip="{{ 'spotify-refresh-tracks' | translate }}"
+                    >
+                        <i class="las la-sync-alt" [class.rotating]="isLoadingTracks"></i>
+                    </button>
+                </div>
+
+                <div class="spotify-track-list">
+                    <div class="spotify-track-list__head">
+                        <div class="spotify-track-list__head-cell spotify-track-list__head-cell--idx">#</div>
+                        <div class="spotify-track-list__head-cell">{{ 'spotify-col-title' | translate }}</div>
+                        <div class="spotify-track-list__head-cell">{{ 'spotify-col-album' | translate }}</div>
+                        <div class="spotify-track-list__head-cell spotify-track-list__head-cell--right">
+                            <i class="las la-clock"></i>
+                        </div>
+                    </div>
+                    <div
+                        *ngFor="let item of currentDetail.tracks; let i = index"
+                        class="spotify-track-row"
+                        [class.is-missing]="item.matchedLocalTrack == undefined"
+                        [class.is-playable]="item.matchedLocalTrack != undefined"
+                        (dblclick)="playFrom(item)"
+                        (contextmenu)="onTrackContextMenu($event, item)"
+                    >
+                        <div class="spotify-track-row__idx">
+                            <span class="spotify-track-row__idx-num">{{ i + 1 }}</span>
+                            <i
+                                *ngIf="item.matchedLocalTrack != undefined"
+                                class="las la-play spotify-track-row__idx-play"
+                                (click)="playFrom(item)"
+                            ></i>
+                            <i
+                                *ngIf="item.matchedLocalTrack == undefined"
+                                class="las la-times spotify-track-row__idx-missing"
+                                matTooltip="{{ 'spotify-not-in-library' | translate }}"
+                            ></i>
+                        </div>
+                        <div class="spotify-track-row__main">
+                            <div class="spotify-track-row__cover">
+                                <img *ngIf="displayCover(item)" [src]="displayCover(item)" alt="" />
+                                <i *ngIf="!displayCover(item)" class="las la-music"></i>
+                            </div>
+                            <div class="spotify-track-row__text">
+                                <div class="spotify-track-row__title">
+                                    <span class="spotify-track-row__title-text">{{ item.spotifyTrack.name }}</span>
+                                    <i
+                                        *ngIf="item.matchedLocalTrack != undefined"
+                                        class="las la-check-circle spotify-track-row__match-badge"
+                                        [matTooltip]="('spotify-match-' + item.matchQuality) | translate"
+                                    ></i>
+                                </div>
+                                <div class="spotify-track-row__artists">{{ artistsText(item.spotifyTrack.artists) }}</div>
+                            </div>
+                        </div>
+                        <div class="spotify-track-row__album">{{ item.spotifyTrack.albumName }}</div>
+                        <div class="spotify-track-row__duration">{{ displayDuration(item) }}</div>
+                    </div>
+                </div>
+            </ng-container>
+        </section>
+    </div>
+</div>
+
+<div
+    #trackContextMenuTrigger
+    style="visibility: hidden; position: fixed"
+    [style.left]="contextMenuOpener.positionX"
+    [style.top]="contextMenuOpener.positionY"
+    [matMenuTriggerFor]="spotifyTrackContextMenu"
+></div>
+<mat-menu #spotifyTrackContextMenu="matMenu">
+    <ng-template matMenuContent let-item="data">
+        <button mat-menu-item *ngIf="item?.matchedLocalTrack" (click)="playFrom(item)">
+            <span>{{ 'spotify-context-play' | translate }}</span>
+        </button>
+        <mat-divider *ngIf="item?.matchedLocalTrack"></mat-divider>
+        <button mat-menu-item (click)="openArtistFromTrack(item)">
+            <span>{{ 'spotify-context-open-artist' | translate }}</span>
+        </button>
+        <button mat-menu-item *ngIf="canOpenAlbum(item)" (click)="openAlbumFromTrack(item)">
+            <span>{{ 'spotify-context-open-album' | translate }}</span>
+        </button>
+    </ng-template>
+</mat-menu>

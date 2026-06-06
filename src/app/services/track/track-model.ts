@@ -247,6 +247,14 @@ export class TrackModel implements ISelectable {
         return this.track.dateAdded ?? 0;
     }
 
+    public get isBlacklisted(): boolean {
+        return (this.track.isBlacklisted ?? 0) === 1;
+    }
+
+    public set isBlacklisted(v: boolean) {
+        this.track.isBlacklisted = v ? 1 : 0;
+    }
+
     public increasePlayCountAndDateLastPlayed(): void {
         if (this.track.playCount == undefined) {
             this.track.playCount = 0;

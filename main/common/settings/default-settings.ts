@@ -97,4 +97,13 @@ export const DEFAULT_SETTINGS = {
     showReleasesPage: true,
     releaseCalendarSyncIntervalHours: 24,
     releaseCalendarLastFullSyncAt: 0,
+    spotifyClientId: '',
+    spotifyAccessToken: '',
+    spotifyRefreshToken: '',
+    spotifyTokenExpiresAt: 0,
+    spotifyUserDisplayName: '',
+    spotifyImportedPlaylistIds: '',
+    spotifyPastedPlaylists: '',
+    playlistsTabSelectedSource: 'local',
+    playlistsTabSelectedSpotifyPlaylist: '',
 } as const;

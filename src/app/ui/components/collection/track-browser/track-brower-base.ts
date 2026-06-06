@@ -10,6 +10,7 @@ import { DesktopBase } from '../../../../common/io/desktop.base';
 import { MouseSelectionWatcher } from '../../mouse-selection-watcher';
 import { ContextMenuOpener } from '../../context-menu-opener';
 import { PlaybackService } from '../../../../services/playback/playback.service';
+import { BlacklistService } from '../../../../services/blacklist/blacklist.service';
 
 @Directive()
 export class TrackBrowserBase {
@@ -23,6 +24,7 @@ export class TrackBrowserBase {
         private collectionService: CollectionServiceBase,
         private translatorService: TranslatorServiceBase,
         private desktop: DesktopBase,
+        public blacklistService: BlacklistService,
     ) {}
 
     @ViewChild('trackContextMenuAnchor', { read: MatMenuTrigger, static: false })
@@ -34,6 +36,26 @@ export class TrackBrowserBase {
 
     public async onAddToQueueAsync(): Promise<void> {
         await this.playbackService.addTracksToQueueAsync(this.mouseSelectionWatcher.selectedItems as TrackModel[]);
+    }
+
+    public isSelectionBlacklisted(): boolean {
+        const tracks: TrackModel[] = this.mouseSelectionWatcher.selectedItems as TrackModel[];
+
+        return tracks.length > 0 && tracks.every((t) => this.blacklistService.isBlacklisted(t));
+    }
+
+    public onToggleBlacklist(): void {
+        const tracks: TrackModel[] = this.mouseSelectionWatcher.selectedItems as TrackModel[];
+
+        if (tracks.length === 0) {
+            return;
+        }
+
+        if (this.isSelectionBlacklisted()) {
+            this.blacklistService.unblacklistTracks(tracks);
+        } else {
+            this.blacklistService.blacklistTracks(tracks);
+        }
     }
 
     public onShowInFolder(): void {

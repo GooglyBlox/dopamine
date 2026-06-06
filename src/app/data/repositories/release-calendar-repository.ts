@@ -6,6 +6,7 @@
 import { Injectable } from '@angular/core';
 import { DatabaseFactory } from '../database-factory';
 import { ClauseCreator } from '../clause-creator';
+import { BlacklistedArtist } from '../entities/blacklisted-artist';
 import { FollowedArtist } from '../entities/followed-artist';
 import { MbArtist, MbArtistResolutionStatus, MbArtistSyncStatus } from '../entities/mb-artist';
 import { ReleaseGroup } from '../entities/release-group';
@@ -134,6 +135,29 @@ export class ReleaseCalendarRepository implements ReleaseCalendarRepositoryBase 
         return rows.map((r: any) => this.rowToFollowed(r));
     }
 
+    public setArtistBlacklisted(name: string, nameKey: string, isBlacklisted: boolean, when: number): void {
+        const database: any = this.databaseFactory.create();
+        database
+            .prepare(
+                `INSERT INTO BlacklistedArtist (NameKey, Name, IsBlacklisted, DateUpdated)
+                 VALUES (@nameKey, @name, @isBlacklisted, @when)
+                 ON CONFLICT(NameKey) DO UPDATE SET Name = excluded.Name, IsBlacklisted = excluded.IsBlacklisted, DateUpdated = excluded.DateUpdated`,
+            )
+            .run({ nameKey: nameKey, name: name, isBlacklisted: isBlacklisted ? 1 : 0, when: when });
+    }
+
+    public getArtistBlacklistOverride(nameKey: string): BlacklistedArtist | undefined {
+        const database: any = this.databaseFactory.create();
+        const row = database.prepare(`SELECT * FROM BlacklistedArtist WHERE NameKey = ?`).get(nameKey);
+        return row != undefined ? this.rowToBlacklistedArtist(row) : undefined;
+    }
+
+    public getAllArtistBlacklistOverrides(): BlacklistedArtist[] {
+        const database: any = this.databaseFactory.create();
+        const rows = database.prepare(`SELECT * FROM BlacklistedArtist`).all();
+        return rows.map((r: any) => this.rowToBlacklistedArtist(r));
+    }
+
     public upsertReleaseGroup(rg: ReleaseGroup): void {
         const database: any = this.databaseFactory.create();
         database
@@ -236,6 +260,15 @@ export class ReleaseCalendarRepository implements ReleaseCalendarRepositoryBase 
         f.isFollowed = row.IsFollowed ?? 0;
         f.dateUpdated = row.DateUpdated ?? 0;
         return f;
+    }
+
+    private rowToBlacklistedArtist(row: any): BlacklistedArtist {
+        const b = new BlacklistedArtist();
+        b.nameKey = row.NameKey;
+        b.name = row.Name;
+        b.isBlacklisted = row.IsBlacklisted ?? 0;
+        b.dateUpdated = row.DateUpdated ?? 0;
+        return b;
     }
 
     private rowToReleaseGroup(row: any): ReleaseGroup {

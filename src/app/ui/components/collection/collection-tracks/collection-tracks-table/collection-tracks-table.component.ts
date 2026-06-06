@@ -23,6 +23,7 @@ import { ContextMenuOpener } from '../../../context-menu-opener';
 import { MetadataService } from '../../../../../services/metadata/metadata.service';
 import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { TrackServiceBase } from '../../../../../services/track/track.service.base';
+import { BlacklistService } from '../../../../../services/blacklist/blacklist.service';
 
 @Component({
     selector: 'app-collection-tracks-table',
@@ -53,6 +54,7 @@ export class CollectionTracksTableComponent extends TrackBrowserBase implements 
         translatorService: TranslatorServiceBase,
         desktop: DesktopBase,
         logger: Logger,
+        blacklistService: BlacklistService,
     ) {
         super(
             playbackService,
@@ -64,6 +66,7 @@ export class CollectionTracksTableComponent extends TrackBrowserBase implements 
             collectionService,
             translatorService,
             desktop,
+            blacklistService,
         );
     }
 

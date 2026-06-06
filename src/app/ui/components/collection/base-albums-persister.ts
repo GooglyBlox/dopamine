@@ -65,6 +65,17 @@ export abstract class BaseAlbumsPersister {
         this.saveSelectedAlbumToSettings('');
     }
 
+    public selectAlbumByKey(albumKey: string): void {
+        try {
+            const trimmed = (albumKey ?? '').trim();
+            this.selectedAlbumKeys = trimmed.length > 0 ? [trimmed] : [];
+            this.saveSelectedAlbumToSettings(trimmed);
+            this.selectedAlbumsChanged.next(this.selectedAlbumKeys);
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not select album by key', 'BaseAlbumsPersister', 'selectAlbumByKey');
+        }
+    }
+
     public getSelectedAlbumOrder(): AlbumOrder {
         if (this.selectedAlbumOrder == undefined) {
             return AlbumOrder.byAlbumTitleAscending;

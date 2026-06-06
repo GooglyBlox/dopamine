@@ -1,8 +1,12 @@
 import { Injectable } from '@angular/core';
+import { Observable, Subject } from 'rxjs';
 import { SettingsBase } from '../../common/settings/settings.base';
 
 @Injectable({ providedIn: 'root' })
 export class CollectionNavigationService {
+    private navigateRequest: Subject<number> = new Subject<number>();
+    public navigateRequest$: Observable<number> = this.navigateRequest.asObservable();
+
     public constructor(private settings: SettingsBase) {}
 
     public get page(): number {
@@ -12,6 +16,11 @@ export class CollectionNavigationService {
 
     public set page(value: number) {
         this.settings.selectedCollectionPage = value;
+    }
+
+    public navigateTo(page: number): void {
+        this.settings.selectedCollectionPage = page;
+        this.navigateRequest.next(page);
     }
 
     public hasVisiblePages(): boolean {

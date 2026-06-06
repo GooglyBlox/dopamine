@@ -12,5 +12,7 @@ export abstract class TrackServiceBase {
     public abstract getTracksForGenres(genres: string[]): TrackModels;
     public abstract savePlayCountAndDateLastPlayed(track: TrackModel): void;
     public abstract saveSkipCount(track: TrackModel): void;
+    public abstract saveTrackBlacklist(track: TrackModel, isBlacklisted: boolean): void;
+    public abstract getBlacklistedTracks(): TrackModels;
     public abstract scrollToPlayingTrack(tracks: TrackModel[], viewPort: CdkVirtualScrollViewport): void;
 }

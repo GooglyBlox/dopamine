@@ -349,6 +349,29 @@ export class TrackRepository implements TrackRepositoryBase {
         });
     }
 
+    public updateBlacklisted(trackId: number, isBlacklisted: number): void {
+        const database: any = this.databaseFactory.create();
+
+        const statement = database.prepare(`UPDATE Track
+                                            SET IsBlacklisted=@isBlacklisted
+                                            WHERE TrackID = @trackId;`);
+
+        statement.run({
+            trackId: trackId,
+            isBlacklisted: isBlacklisted,
+        });
+    }
+
+    public getBlacklistedTracks(): Track[] | undefined {
+        const database: any = this.databaseFactory.create();
+
+        const statement = database.prepare(`${QueryParts.selectTracksQueryPart(true)} AND t.IsBlacklisted=1;`);
+
+        const tracks: Track[] | undefined = statement.all();
+
+        return tracks;
+    }
+
     public getLastModifiedTrackForAlbumKeyAsync(albumKeyIndex: string, albumKey: string): Track | undefined {
         const database: any = this.databaseFactory.create();
         const statement = database.prepare(`${QueryParts.selectTracksQueryPart(false)} WHERE t.AlbumKey${albumKeyIndex}=?;`);

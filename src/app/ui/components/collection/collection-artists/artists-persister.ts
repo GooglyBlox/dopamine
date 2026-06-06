@@ -43,6 +43,29 @@ export class ArtistsPersister {
         return [];
     }
 
+    public selectArtistByName(name: string): void {
+        try {
+            const trimmed = (name ?? '').trim();
+            this.selectedArtistNames = trimmed.length > 0 ? [trimmed] : [];
+            this.saveSelectedArtistToSettings(trimmed);
+            this.selectedArtistsChanged.next(this.selectedArtistNames);
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not select artist by name', 'ArtistsPersister', 'selectArtistByName');
+        }
+    }
+
+    public setSelectedArtistTypeByName(typeName: string): void {
+        try {
+            const type = ArtistType[typeName as keyof typeof ArtistType];
+            if (type == undefined) return;
+            this.selectedArtistType = type;
+            this.saveSelectedArtistTypeToSettings(typeName);
+            this.selectedArtistTypeChanged.next(type);
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not set selected artist type by name', 'ArtistsPersister', 'setSelectedArtistTypeByName');
+        }
+    }
+
     public setSelectedArtists(selectedArtists: ArtistModel[]): void {
         try {
             if (selectedArtists.length > 0) {

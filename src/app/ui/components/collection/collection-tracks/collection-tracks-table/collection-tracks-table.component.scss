@@ -19,6 +19,10 @@
     background: var(--theme-hovered-item-background);
 }
 
+.tracks-table-row--blacklisted {
+    opacity: 0.45;
+}
+
 .tracks-table-header {
     height: 28px;
 }

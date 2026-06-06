@@ -28,6 +28,7 @@ import { Track } from '../../data/entities/track';
 import { FileFormats } from '../../common/application/file-formats';
 import { DialogServiceBase } from '../dialog/dialog.service.base';
 import { FileAccessBase } from '../../common/io/file-access.base';
+import { BlacklistService } from '../blacklist/blacklist.service';
 
 @Injectable({ providedIn: 'root' })
 export class PlaybackService {
@@ -65,6 +66,7 @@ export class PlaybackService {
         private queue: Queue,
         private mathExtensions: MathExtensions,
         private settings: SettingsBase,
+        private blacklistService: BlacklistService,
         private logger: Logger,
     ) {
         this._audioPlayer = this.audioPlayerFactory.create();
@@ -135,11 +137,14 @@ export class PlaybackService {
     public playbackSkipped$: Observable<void> = this.playbackSkipped.asObservable();
 
     public async enqueueAndPlayTracksAsync(tracksToEnqueue: TrackModel[]): Promise<void> {
-        if (tracksToEnqueue.length === 0) {
+        // Blacklisted tracks are never enqueued, so they can never be played.
+        const playableTracks: TrackModel[] = this.blacklistService.filterOutBlacklisted(tracksToEnqueue);
+
+        if (playableTracks.length === 0) {
             return;
         }
 
-        this.queue.setTracks(tracksToEnqueue, this.isShuffled);
+        this.queue.setTracks(playableTracks, this.isShuffled);
 
         // Play first track in queue (will be a random track if queue is shuffled)
         const firstTrack: TrackModel | undefined = this.queue.getFirstTrack();
@@ -158,9 +163,22 @@ export class PlaybackService {
             return;
         }
 
-        const enqueuedTracks: TrackModel[] = this.queue.setTracks(tracksToEnqueue, this.isShuffled);
-        const enqueuedTrackToPlay: TrackModel = enqueuedTracks.filter((x) => x.path === trackToPlay.path)[0];
-        await this.stopAndPlayAsync(enqueuedTrackToPlay, false);
+        // Blacklisted tracks are never enqueued, so they can never be played.
+        const playableTracks: TrackModel[] = this.blacklistService.filterOutBlacklisted(tracksToEnqueue);
+
+        if (playableTracks.length === 0) {
+            return;
+        }
+
+        const enqueuedTracks: TrackModel[] = this.queue.setTracks(playableTracks, this.isShuffled);
+
+        // If the requested track was itself blacklisted (filtered out), fall back to the first playable track.
+        const enqueuedTrackToPlay: TrackModel | undefined =
+            enqueuedTracks.filter((x) => x.path === trackToPlay.path)[0] ?? this.queue.getFirstTrack();
+
+        if (enqueuedTrackToPlay != undefined) {
+            await this.stopAndPlayAsync(enqueuedTrackToPlay, false);
+        }
     }
 
     public async enqueueAndPlayArtistAsync(artistToPlay: ArtistModel, artistType: ArtistType): Promise<void> {
@@ -187,12 +205,15 @@ export class PlaybackService {
     }
 
     public async addTracksToQueueAsync(tracksToAdd: TrackModel[]): Promise<void> {
-        if (tracksToAdd.length === 0) {
+        // Blacklisted tracks are never enqueued, so they can never be played.
+        const playableTracks: TrackModel[] = this.blacklistService.filterOutBlacklisted(tracksToAdd);
+
+        if (playableTracks.length === 0) {
             return;
         }
 
-        this.queue.addTracks(tracksToAdd, this.currentTrack);
-        await this.notifyOfTracksAddedToPlaybackQueueAsync(tracksToAdd.length);
+        this.queue.addTracks(playableTracks, this.currentTrack);
+        await this.notifyOfTracksAddedToPlaybackQueueAsync(playableTracks.length);
     }
 
     public async addArtistToQueueAsync(artistToAdd: ArtistModel, artistType: ArtistType): Promise<void> {
@@ -420,8 +441,28 @@ export class PlaybackService {
     }
 
     private async playAsync(trackToPlay: TrackModel, isPlayingPreviousTrack: boolean): Promise<void> {
-        await this.audioPlayer.playAsync(trackToPlay);
-        this.postPlay(trackToPlay, isPlayingPreviousTrack);
+        // Defensive safety net: blacklisted tracks should already have been filtered out at enqueue time,
+        // but if one somehow reaches here (e.g. a restored queue), skip forward to the next playable track.
+        let track: TrackModel = trackToPlay;
+        const allowWrapAround: boolean = this.loopMode === LoopMode.All;
+        const visitedPaths: Set<string> = new Set<string>();
+
+        while (this.blacklistService.isBlacklisted(track)) {
+            this.logger.info(`Skipping blacklisted track '${track.path}'`, 'PlaybackService', 'playAsync');
+            visitedPaths.add(track.path);
+
+            const nextTrack: TrackModel | undefined = this.queue.getNextTrack(track, allowWrapAround);
+
+            if (nextTrack == undefined || visitedPaths.has(nextTrack.path)) {
+                this.stop();
+                return;
+            }
+
+            track = nextTrack;
+        }
+
+        await this.audioPlayer.playAsync(track);
+        this.postPlay(track, isPlayingPreviousTrack);
     }
 
     private postPlay(trackToPlay: TrackModel, isPlayingPreviousTrack: boolean): void {
@@ -604,6 +645,32 @@ export class PlaybackService {
                 void this.playNextAsync();
             }),
         );
+
+        this.subscription.add(
+            this.blacklistService.blacklistChanged$.subscribe(() => {
+                this.handleBlacklistChanged();
+            }),
+        );
+    }
+
+    private handleBlacklistChanged(): void {
+        // Remove newly-blacklisted tracks that are not currently playing from the queue.
+        const blacklistedNotCurrent: TrackModel[] = this.queue.tracks.filter(
+            (t) => t !== this.currentTrack && this.blacklistService.isBlacklisted(t),
+        );
+
+        if (blacklistedNotCurrent.length > 0) {
+            this.queue.removeTracks(blacklistedNotCurrent);
+        }
+
+        // If the currently playing track just became blacklisted, skip it immediately.
+        if (this.currentTrack != undefined && this.blacklistService.isBlacklisted(this.currentTrack)) {
+            const blacklistedCurrentTrack: TrackModel = this.currentTrack;
+
+            void this.playNextAsync().then(() => {
+                this.queue.removeTracks([blacklistedCurrentTrack]);
+            });
+        }
     }
 
     private applyVolumeFromSettings(): void {
@@ -667,7 +734,19 @@ export class PlaybackService {
         this.queue.restoreTracks(info.tracks, info.playbackOrder);
         this.logger.info(`Restored ${info.tracks.length} tracks to playback queue`, 'PlaybackService', 'restoreQueue');
 
-        if (info.playingTrack) {
+        // Tracks may have been blacklisted since the queue was persisted: drop them from the restored queue.
+        const blacklistedInQueue: TrackModel[] = this.queue.tracks.filter((t) => this.blacklistService.isBlacklisted(t));
+
+        if (blacklistedInQueue.length > 0) {
+            this.queue.removeTracks(blacklistedInQueue);
+            this.logger.info(
+                `Removed ${blacklistedInQueue.length} blacklisted track(s) from restored queue`,
+                'PlaybackService',
+                'restoreQueue',
+            );
+        }
+
+        if (info.playingTrack && !this.blacklistService.isBlacklisted(info.playingTrack)) {
             this.logger.info(
                 `Restoring playback to track: ${info.playingTrack.path} at ${info.progressSeconds} seconds`,
                 'PlaybackService',
