@@ -1,4 +1,4 @@
-const { File } = require('@digimezzo/node-taglib-sharp');
+const { File } = require('node-taglib-sharp');
 const { DataDelimiter } = require('./data-delimiter');
 const fs = require('fs-extra');
 const path = require('path');
