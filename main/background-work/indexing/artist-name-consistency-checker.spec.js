@@ -2,8 +2,8 @@ const { ArtistNameConsistencyChecker } = require('./artist-name-consistency-chec
 const { LoggerMock } = require('../mocks/logger-mock');
 const { Track } = require('../data/entities/track');
 
-// Mock for File from node-taglib-sharp
-jest.mock('node-taglib-sharp', () => {
+// Mock for File from @digimezzo/node-taglib-sharp
+jest.mock('@digimezzo/node-taglib-sharp', () => {
     const savedFiles = {};
     return {
         File: {
