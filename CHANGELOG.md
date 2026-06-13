@@ -3,7 +3,7 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.6] - 2026-06-05
+## [3.0.6] - 2026-06-13
 
 ### Fixed
 
@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deleting song from playlist sometimes fails
 - Playback controls only work when clicking on upper half of the buttons
 - It's unclear that files must be tagged with an external ReplayGain scanner (for example rsgain) before normalization can take effect.
+- Change to Artist or Album tags is not reflected in the song list view nor in the Now Playing information
+- ReplayGain issues
+- Smart playlist filters ignore text containing accents or other special characters
+- Some MP3 files trigger an "MPEG header not found" error due to a too-narrow initial MPEG header scan range
+
+### Changed
+
+- Updated the Vietnamese translation
 
 ## [3.0.5] - 2026-05-31
 
