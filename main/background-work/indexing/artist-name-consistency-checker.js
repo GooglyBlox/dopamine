@@ -639,6 +639,28 @@ class ArtistNameConsistencyChecker {
     }
 
     /**
+     * Determines the artist name to use in the standard-format file name.
+     *
+     * Normally this is the album artist (falling back to the first track artist).
+     * For "Various Artists" compilations, the album artist is not an actual performer,
+     * so we use the track's own first artist instead — e.g. a track on a "Various Artists"
+     * soundtrack performed by Kanye West is named "Kanye West - ..." rather than
+     * "Various Artists - ...". Falls back to the album artist if the track has no artist.
+     *
+     * This only affects file names. Folder organization still groups compilations under
+     * the "Various Artists" album artist so the album stays together in one folder.
+     */
+    #getFilenameArtist(albumArtists, artists) {
+        const albumArtist = albumArtists[0];
+
+        if (albumArtist && albumArtist.trim().toLowerCase() === 'various artists') {
+            return artists[0] || albumArtist;
+        }
+
+        return albumArtist || artists[0];
+    }
+
+    /**
      * Renames tracks to the standard format: Artist - Album - TrackNum - Title.ext
      * or Artist - Album - Title.ext if no track number is available.
      */
@@ -647,7 +669,7 @@ class ArtistNameConsistencyChecker {
             try {
                 const albumArtists = this.#parseDelimitedString(track.albumArtists);
                 const artists = this.#parseDelimitedString(track.artists);
-                const primaryArtist = albumArtists[0] || artists[0];
+                const primaryArtist = this.#getFilenameArtist(albumArtists, artists);
 
                 if (!primaryArtist || !track.albumTitle) {
                     continue;

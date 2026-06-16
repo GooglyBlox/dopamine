@@ -1276,6 +1276,75 @@ describe('ArtistNameConsistencyChecker', () => {
             );
         });
 
+        it('should use the first track artist for filename when album artist is "Various Artists"', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Various Artists/Album/Various Artists - Album - 03 - White Dress.flac',
+                ';Kanye West;',
+                ';Various Artists;',
+                'White Dress',
+                'Album',
+            );
+            newTrack.trackId = 1;
+            newTrack.trackNumber = 3;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.stringContaining('Kanye West - Album - 03 - White Dress.flac'),
+            );
+        });
+
+        it('should match "Various Artists" case-insensitively for filename artist', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Various Artists/Album/01. Song.flac',
+                ';Real Artist;',
+                ';VARIOUS ARTISTS;',
+                'Song',
+                'Album',
+            );
+            newTrack.trackId = 1;
+            newTrack.trackNumber = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.stringContaining('Real Artist - Album - 01 - Song.flac'),
+            );
+        });
+
+        it('should fall back to "Various Artists" for filename when the track has no artist', () => {
+            const newTrack = createTrackWithArtists(
+                '/music/Various Artists/Album/01. Song.flac',
+                '',
+                ';Various Artists;',
+                'Song',
+                'Album',
+            );
+            newTrack.trackId = 1;
+            newTrack.trackNumber = 1;
+
+            folderRepositoryMock.getFolders.mockReturnValue([{ folderId: 1, path: '/music', showInCollection: 1 }]);
+            trackRepositoryMock.getAllTracks.mockReturnValue([newTrack]);
+
+            const sut = createSut();
+            sut.checkAndFixConsistency([newTrack]);
+
+            expect(fs.renameSync).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.stringContaining('Various Artists - Album - 01 - Song.flac'),
+            );
+        });
+
         it('should not rename if already in correct format', () => {
             const newTrack = createTrackWithArtists(
                 '/music/Artist/Album/Artist - Album - 01 - Song.flac',
