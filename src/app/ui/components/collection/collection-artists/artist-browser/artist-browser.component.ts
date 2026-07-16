@@ -29,6 +29,7 @@ import { MusicBrainzApi } from '../../../../../common/api/musicbrainz/musicbrain
 import { ReleaseCalendarService } from '../../../../../services/release-calendar/release-calendar.service';
 import { ReleaseNameKey } from '../../../../../services/release-calendar/release-name-key';
 import { BlacklistService } from '../../../../../services/blacklist/blacklist.service';
+import { SettingsBase } from '../../../../../common/settings/settings.base';
 
 @Component({
     selector: 'app-artist-browser',
@@ -61,6 +62,7 @@ export class ArtistBrowserComponent implements OnInit, OnDestroy {
         private artistSorter: ArtistSorter,
         private semanticZoomHeaderAdder: SemanticZoomHeaderAdder,
         private scheduler: SchedulerBase,
+        public settings: SettingsBase,
         private logger: Logger,
         private dialogService: DialogServiceBase,
         private artistRenameService: ArtistRenameService,
@@ -286,16 +288,44 @@ export class ArtistBrowserComponent implements OnInit, OnDestroy {
         this.shouldZoomOut = false;
         await this.scheduler.sleepAsync(Constants.semanticZoomInDelayMilliseconds);
 
-        const selectedIndex = this.orderedArtists.findIndex((elem) => elem.zoomHeader === text && elem.isZoomHeader);
+        const normalizedText: string = text.toLowerCase();
+        const selectedIndex = this.orderedArtists.findIndex((elem) => elem.zoomHeader === normalizedText && elem.isZoomHeader);
 
         if (selectedIndex > -1) {
             this.viewPort.scrollToIndex(selectedIndex, 'smooth');
+            this.selectArtistsByZoomHeader(normalizedText);
         }
+    }
+
+    private selectArtistsByZoomHeader(zoomHeader: string): void {
+        for (const artist of this.artists) {
+            artist.isSelected = false;
+        }
+
+        const selectedArtists: ArtistModel[] = this.artists.filter((artist) => !artist.isZoomHeader && artist.zoomHeader === zoomHeader);
+
+        for (const selectedArtist of selectedArtists) {
+            selectedArtist.isSelected = true;
+        }
+
+        this.artistsPersister.setSelectedArtists(selectedArtists);
     }
 
     public async shuffleAllAsync(): Promise<void> {
         const tracks: TrackModels = this.trackService.getVisibleTracks();
         this.playbackService.forceShuffled();
         await this.playbackService.enqueueAndPlayTracksAsync(tracks.tracks);
+    }
+
+    public async enqueueAndPlayArtistAsync(artist: ArtistModel): Promise<void> {
+        if (artist.isZoomHeader) {
+            return;
+        }
+
+        await this.playbackService.enqueueAndPlayArtistAsync(artist, this.selectedArtistType);
+    }
+
+    public get itemSize(): number {
+        return this.settings.showArtistImages ? 66 : 30;
     }
 }

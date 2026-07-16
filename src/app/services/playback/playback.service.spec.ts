@@ -181,6 +181,10 @@ describe('PlaybackService', () => {
         subscription.unsubscribe();
     });
 
+    function createArtistModel(artistName: string): ArtistModel {
+        return new ArtistModel(artistName, 'artist-artworkId', translatorServiceMock.object, applicationPathsMock.object);
+    }
+
     function createService(): PlaybackService {
         return new PlaybackService(
             audioPlayerFactoryMock.object,
@@ -639,6 +643,24 @@ describe('PlaybackService', () => {
             // Assert
             queueMock.verify((x) => x.unShuffle(), Times.exactly(1));
         });
+
+        it('should save queue after debounce when toggling shuffle', () => {
+            // Arrange
+            jest.useFakeTimers();
+            settingsStub.rememberPlaybackStateAfterRestart = true;
+            const service: PlaybackService = createService();
+
+            // Act
+            service.toggleIsShuffled();
+
+            // Assert
+            queuePersisterMock.verify((x) => x.save(It.isAny(), It.isAny(), It.isAny()), Times.never());
+
+            jest.runAllTimers();
+
+            queuePersisterMock.verify((x) => x.save(It.isAny(), It.isAny(), It.isAny()), Times.once());
+            jest.useRealTimers();
+        });
     });
 
     describe('forceShuffled', () => {
@@ -873,7 +895,7 @@ describe('PlaybackService', () => {
             // Arrange
             const service: PlaybackService = createService();
 
-            const artistToPlay: ArtistModel = new ArtistModel('artist1', translatorServiceMock.object);
+            const artistToPlay: ArtistModel = createArtistModel('artist1');
             queueMock.setup((x) => x.getFirstTrack()).returns(() => trackModel1);
 
             // Act
@@ -887,7 +909,7 @@ describe('PlaybackService', () => {
             // Arrange
             const service: PlaybackService = createService();
 
-            const artistToPlay: ArtistModel = new ArtistModel('artist1', translatorServiceMock.object);
+            const artistToPlay: ArtistModel = createArtistModel('artist1');
             queueMock.setup((x) => x.getFirstTrack()).returns(() => trackModel1);
 
             // Act
@@ -901,7 +923,7 @@ describe('PlaybackService', () => {
             // Arrange
             const service: PlaybackService = createService();
 
-            const artistToPlay: ArtistModel = new ArtistModel('artist1', translatorServiceMock.object);
+            const artistToPlay: ArtistModel = createArtistModel('artist1');
             queueMock.setup((x) => x.getFirstTrack()).returns(() => trackModel1);
 
             // Act
@@ -915,7 +937,7 @@ describe('PlaybackService', () => {
             // Arrange
             const service: PlaybackService = createService();
 
-            const artistToPlay: ArtistModel = new ArtistModel('artist1', translatorServiceMock.object);
+            const artistToPlay: ArtistModel = createArtistModel('artist1');
             audioPlayerMock.reset();
             audioPlayerMock.setup((x) => x.stop()).verifiable(Times.once(), ExpectedCallType.InSequence);
             audioPlayerMock.setup((x) => x.playAsync(trackModel2)).verifiable(Times.once(), ExpectedCallType.InSequence);
@@ -936,7 +958,7 @@ describe('PlaybackService', () => {
             // Arrange
             const service: PlaybackService = createService();
 
-            const artistToPlay: ArtistModel = new ArtistModel('artist1', translatorServiceMock.object);
+            const artistToPlay: ArtistModel = createArtistModel('artist1');
             let receivedTrack: TrackModel | undefined;
             let isPlayingPreviousTrack: boolean = true;
             subscription.add(
@@ -2341,6 +2363,73 @@ describe('PlaybackService', () => {
             // Assert
             queueMock.verify((x) => x.removeTracks([trackModel1]), Times.once());
         });
+
+        it('should save queue after debounce when tracks are removed', () => {
+            // Arrange
+            jest.useFakeTimers();
+            settingsStub.rememberPlaybackStateAfterRestart = true;
+            const service: PlaybackService = createService();
+
+            // Act
+            service.removeFromQueue([trackModel1]);
+
+            // Assert
+            queuePersisterMock.verify((x) => x.save(It.isAny(), It.isAny(), It.isAny()), Times.never());
+
+            jest.runAllTimers();
+
+            queuePersisterMock.verify((x) => x.save(It.isAny(), It.isAny(), It.isAny()), Times.once());
+            jest.useRealTimers();
+        });
+    });
+
+    describe('reorderQueue', () => {
+        it('should move tracks in queue from previous index to current index', () => {
+            // Arrange
+            const service: PlaybackService = createService();
+
+            // Act
+            service.reorderQueue(4, 3);
+
+            // Assert
+            queueMock.verify((x) => x.moveTrackInPlaybackOrder(4, 3), Times.once());
+        });
+
+        it('should save queue after debounce when remember playback state is enabled', () => {
+            // Arrange
+            jest.useFakeTimers();
+            settingsStub.rememberPlaybackStateAfterRestart = true;
+            const service: PlaybackService = createService();
+
+            // Act
+            service.reorderQueue(4, 3);
+
+            // Assert
+            queuePersisterMock.verify((x) => x.save(It.isAny(), It.isAny(), It.isAny()), Times.never());
+
+            jest.runAllTimers();
+
+            queuePersisterMock.verify((x) => x.save(It.isAny(), It.isAny(), It.isAny()), Times.once());
+            jest.useRealTimers();
+        });
+
+        it('should debounce queue saves when reordered repeatedly', () => {
+            // Arrange
+            jest.useFakeTimers();
+            settingsStub.rememberPlaybackStateAfterRestart = true;
+            const service: PlaybackService = createService();
+
+            // Act
+            service.reorderQueue(4, 3);
+            service.reorderQueue(3, 2);
+            service.reorderQueue(2, 1);
+
+            // Assert
+            jest.runAllTimers();
+
+            queuePersisterMock.verify((x) => x.save(It.isAny(), It.isAny(), It.isAny()), Times.once());
+            jest.useRealTimers();
+        });
     });
 
     describe('addTracksToQueueAsync', () => {
@@ -2368,13 +2457,31 @@ describe('PlaybackService', () => {
             queueMock.verify((x) => x.addTracks([trackModel1]), Times.once());
             notificationServiceMock.verify((x) => x.singleTrackAddedToPlaybackQueueAsync(), Times.exactly(1));
         });
+
+        it('should save queue after debounce when tracks are added', async () => {
+            // Arrange
+            jest.useFakeTimers();
+            settingsStub.rememberPlaybackStateAfterRestart = true;
+            const service: PlaybackService = createService();
+
+            // Act
+            await service.addTracksToQueueAsync([trackModel1]);
+
+            // Assert
+            queuePersisterMock.verify((x) => x.save(It.isAny(), It.isAny(), It.isAny()), Times.never());
+
+            jest.runAllTimers();
+
+            queuePersisterMock.verify((x) => x.save(It.isAny(), It.isAny(), It.isAny()), Times.once());
+            jest.useRealTimers();
+        });
     });
 
     describe('addArtistToQueueAsync', () => {
         it('should get tracks for the given artist and artistType', async () => {
             // Arrange
             const service: PlaybackService = createService();
-            const artistToAdd: ArtistModel = new ArtistModel('artist1', translatorServiceMock.object);
+            const artistToAdd: ArtistModel = createArtistModel('artist1');
 
             // Act
             await service.addArtistToQueueAsync(artistToAdd, ArtistType.trackArtists);
@@ -2386,7 +2493,7 @@ describe('PlaybackService', () => {
         it('should order tracks for the artist byAlbum', async () => {
             // Arrange
             const service: PlaybackService = createService();
-            const artistToAdd: ArtistModel = new ArtistModel('artist1', translatorServiceMock.object);
+            const artistToAdd: ArtistModel = createArtistModel('artist1');
 
             // Act
             await service.addArtistToQueueAsync(artistToAdd, ArtistType.trackArtists);
@@ -2398,7 +2505,7 @@ describe('PlaybackService', () => {
         it('should add tracks to the queue ordered by album', async () => {
             // Arrange
             const service: PlaybackService = createService();
-            const artistToAdd: ArtistModel = new ArtistModel('artist1', translatorServiceMock.object);
+            const artistToAdd: ArtistModel = createArtistModel('artist1');
 
             // Act
             await service.addArtistToQueueAsync(artistToAdd, ArtistType.trackArtists);

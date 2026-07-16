@@ -22,6 +22,7 @@ import { CollectionServiceBase } from '../collection/collection.service.base';
 import { DuplicateGroup } from '../duplicate/duplicate-group';
 import { TrackModel } from '../track/track-model';
 import { SchedulerBase } from '../../common/scheduling/scheduler.base';
+import { ArtistArtworkIndexer } from './artist-artwork-indexer';
 
 @Injectable()
 export class IndexingService implements OnDestroy {
@@ -36,6 +37,7 @@ export class IndexingService implements OnDestroy {
         private folderService: FolderServiceBase,
         private playbackService: PlaybackService,
         private albumArtworkIndexer: AlbumArtworkIndexer,
+        private artistArtworkIndexer: ArtistArtworkIndexer,
         private albumArtworkRepository: AlbumArtworkRepositoryBase,
         private trackRepository: TrackRepositoryBase,
         private trackFiller: TrackFiller,
@@ -88,6 +90,7 @@ export class IndexingService implements OnDestroy {
         }
 
         await this.albumArtworkIndexer.indexAlbumArtworkAsync();
+        await this.artistArtworkIndexer.indexArtistArtworkAsync();
 
         this.isIndexingCollection = false;
         this.currentIndexingTask = '';
@@ -190,6 +193,24 @@ export class IndexingService implements OnDestroy {
         this.albumArtworkRepository.deleteAlbumArtworkWithoutCover();
 
         await this.albumArtworkIndexer.indexAlbumArtworkAsync();
+
+        this.isIndexingCollection = false;
+        this.indexingFinished.next();
+    }
+
+    public async indexArtistArtworkOnlyAsync(onlyWhenHasNoArtwork: boolean): Promise<void> {
+        if (this.isIndexingCollection) {
+            this.logger.info('Already indexing.', 'IndexingService', 'indexArtistArtworkOnlyAsync');
+            return;
+        }
+
+        this.isIndexingCollection = true;
+
+        if (onlyWhenHasNoArtwork) {
+            await this.artistArtworkIndexer.refreshMissingArtistsArtworkAsync();
+        } else {
+            await this.artistArtworkIndexer.refreshAllArtistsArtworkAsync();
+        }
 
         this.isIndexingCollection = false;
         this.indexingFinished.next();

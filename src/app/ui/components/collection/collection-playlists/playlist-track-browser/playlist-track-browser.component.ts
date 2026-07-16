@@ -1,6 +1,7 @@
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatMenuTrigger } from '@angular/material/menu';
+import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { Subscription } from 'rxjs';
 import { Logger } from '../../../../../common/logger';
 import { PlaybackStarted } from '../../../../../services/playback/playback-started';
@@ -15,6 +16,7 @@ import { PlaybackIndicationServiceBase } from '../../../../../services/playback-
 import { DesktopBase } from '../../../../../common/io/desktop.base';
 import { MouseSelectionWatcher } from '../../../mouse-selection-watcher';
 import { ContextMenuOpener } from '../../../context-menu-opener';
+import { SettingsBase } from '../../../../../common/settings/settings.base';
 
 @Component({
     selector: 'app-playlist-track-browser',
@@ -36,12 +38,16 @@ export class PlaylistTrackBrowserComponent implements OnInit, OnDestroy {
         private playbackIndicationService: PlaybackIndicationServiceBase,
         private translatorService: TranslatorServiceBase,
         private dialogService: DialogServiceBase,
+        public settings: SettingsBase,
         private desktop: DesktopBase,
         private logger: Logger,
     ) {}
 
     @ViewChild('playlistTrackContextMenuAnchor', { read: MatMenuTrigger, static: false })
     public playlistTrackContextMenu: MatMenuTrigger;
+
+    @ViewChild(CdkVirtualScrollViewport)
+    public viewPort: CdkVirtualScrollViewport;
 
     public orderedTracks: TrackModel[] = [];
 
@@ -50,6 +56,10 @@ export class PlaylistTrackBrowserComponent implements OnInit, OnDestroy {
 
     @Input()
     public canRemoveFromPlaylist: boolean = true;
+
+    public get trackItemSize(): number {
+        return this.settings.useCompactTrackListView ? 32 : 46;
+    }
 
     public get tracksPersister(): BaseTracksPersister {
         return this._tracksPersister;
@@ -137,6 +147,16 @@ export class PlaylistTrackBrowserComponent implements OnInit, OnDestroy {
         }
     }
 
+    public scrollToPlayingTrack(): void {
+        const playingTrackIndex: number = this.orderedTracks.findIndex((t) => t.isPlaying);
+
+        if (playingTrackIndex < 0 || this.viewPort == undefined) {
+            return;
+        }
+
+        setTimeout(() => this.viewPort.scrollToIndex(Math.max(playingTrackIndex - 1, 0), 'smooth'));
+    }
+
     private orderTracks(): void {
         let orderedTracks: TrackModel[] = [];
 
@@ -144,6 +164,11 @@ export class PlaylistTrackBrowserComponent implements OnInit, OnDestroy {
             orderedTracks = this.tracks.tracks;
         } catch (e: unknown) {
             this.logger.error(e, 'Could not order tracks', 'PlaylistTrackBrowserComponent', 'orderTracks');
+        }
+
+        // Playlist virtual scroll uses fixed-size rows; ensure no row renders extra header height.
+        for (const track of orderedTracks) {
+            track.showHeader = false;
         }
 
         this.orderedTracks = [...orderedTracks];

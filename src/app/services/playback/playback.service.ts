@@ -26,6 +26,7 @@ import { IAudioPlayer } from './audio-player/i-audio-player';
 import { MediaSessionService } from '../media-session/media-session.service';
 import { Track } from '../../data/entities/track';
 import { FileFormats } from '../../common/application/file-formats';
+import { Constants } from '../../common/application/constants';
 import { DialogServiceBase } from '../dialog/dialog.service.base';
 import { FileAccessBase } from '../../common/io/file-access.base';
 import { BlacklistService } from '../blacklist/blacklist.service';
@@ -52,6 +53,7 @@ export class PlaybackService {
     private _audioPlayer: IAudioPlayer;
     private _preloadTimeoutId: NodeJS.Timeout | number | undefined;
     private _loopPoints: LoopPoints = DefaultLoopPoints.createDisabled();
+    private _queueSaveTimeoutId: NodeJS.Timeout | number | undefined;
 
     public constructor(
         private audioPlayerFactory: AudioPlayerFactory,
@@ -145,6 +147,7 @@ export class PlaybackService {
         }
 
         this.queue.setTracks(playableTracks, this.isShuffled);
+        this.scheduleQueueSave();
 
         // Play first track in queue (will be a random track if queue is shuffled)
         const firstTrack: TrackModel | undefined = this.queue.getFirstTrack();
@@ -171,6 +174,7 @@ export class PlaybackService {
         }
 
         const enqueuedTracks: TrackModel[] = this.queue.setTracks(playableTracks, this.isShuffled);
+        this.scheduleQueueSave();
 
         // If the requested track was itself blacklisted (filtered out), fall back to the first playable track.
         const enqueuedTrackToPlay: TrackModel | undefined =
@@ -213,6 +217,7 @@ export class PlaybackService {
         }
 
         this.queue.addTracks(playableTracks, this.currentTrack);
+        this.scheduleQueueSave();
         await this.notifyOfTracksAddedToPlaybackQueueAsync(playableTracks.length);
     }
 
@@ -253,6 +258,12 @@ export class PlaybackService {
         }
 
         this.queue.removeTracks(tracksToRemove);
+        this.scheduleQueueSave();
+    }
+
+    public reorderQueue(previousIndex: number, currentIndex: number): void {
+        this.queue.moveTrackInPlaybackOrder(previousIndex, currentIndex);
+        this.scheduleQueueSave();
     }
 
     public async playQueuedTrackAsync(trackToPlay: TrackModel): Promise<void> {
@@ -287,12 +298,15 @@ export class PlaybackService {
             this.settings.playbackControlsShuffle = 0;
         }
 
+        this.scheduleQueueSave();
+
         this.logger.info(`Toggled isShuffled from ${!this._isShuffled} to ${this._isShuffled}`, 'PlaybackService', 'toggleIsShuffled');
     }
 
     public forceShuffled(): void {
         this._isShuffled = true;
         this.queue.shuffle();
+        this.scheduleQueueSave();
 
         this.logger.info(`Forced isShuffled`, 'PlaybackService', 'forceShuffled');
     }
@@ -841,9 +855,28 @@ export class PlaybackService {
     }
 
     public saveQueue(): void {
+        if (this._queueSaveTimeoutId !== undefined && this._queueSaveTimeoutId !== null) {
+            clearTimeout(this._queueSaveTimeoutId);
+            this._queueSaveTimeoutId = undefined;
+        }
+
         if (this.settings.rememberPlaybackStateAfterRestart) {
             this.queuePersister.save(this.queue, this.currentTrack, this.progress.progressSeconds);
         }
+    }
+
+    private scheduleQueueSave(): void {
+        if (!this.settings.rememberPlaybackStateAfterRestart) {
+            return;
+        }
+
+        if (this._queueSaveTimeoutId !== undefined && this._queueSaveTimeoutId !== null) {
+            clearTimeout(this._queueSaveTimeoutId);
+        }
+
+        this._queueSaveTimeoutId = setTimeout(() => {
+            this.saveQueue();
+        }, Constants.playlistsSaveDelayMilliseconds);
     }
 
     private async startPausedAsync(track: TrackModel, skipSeconds: number): Promise<void> {

@@ -62,6 +62,11 @@ export class NotificationService implements NotificationServiceBase {
         this.showDismissibleNotification('las la-sync', message, true, false);
     }
 
+    public async updatingArtistArtworkAsync(): Promise<void> {
+        const message: string = await this.translatorService.getAsync('updating-artist-artwork');
+        this.showDismissibleNotification('las la-sync', message, true, false);
+    }
+
     public async singleTrackAddedToPlaylistAsync(playlistName: string): Promise<void> {
         const message: string = await this.translatorService.getAsync('single-track-added-to-playlist', {
             playlistName: playlistName,
@@ -93,6 +98,11 @@ export class NotificationService implements NotificationServiceBase {
 
     public async lastFmLoginFailedAsync(): Promise<void> {
         const message: string = await this.translatorService.getAsync('last-fm-login-failed');
+        await this.showSelfClosingNotificationAsync('las la-frown', message, false);
+    }
+
+    public async listenbrainzLoginFailedAsync(): Promise<void> {
+        const message: string = await this.translatorService.getAsync('listenbrainz-login-failed');
         await this.showSelfClosingNotificationAsync('las la-frown', message, false);
     }
 

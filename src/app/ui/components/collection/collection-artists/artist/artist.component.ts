@@ -3,6 +3,7 @@ import { ArtistModel } from '../../../../../services/artist/artist-model';
 import { AppearanceServiceBase } from '../../../../../services/appearance/appearance.service.base';
 import { SemanticZoomServiceBase } from '../../../../../services/semantic-zoom/semantic-zoom.service.base';
 import { BlacklistService } from '../../../../../services/blacklist/blacklist.service';
+import { SettingsBase } from '../../../../../common/settings/settings.base';
 
 @Component({
     selector: 'app-artist',
@@ -15,6 +16,7 @@ export class ArtistComponent {
         public appearanceService: AppearanceServiceBase,
         public semanticZoomService: SemanticZoomServiceBase,
         public blacklistService: BlacklistService,
+        public settings: SettingsBase,
     ) {}
 
     @Input() public artist: ArtistModel;

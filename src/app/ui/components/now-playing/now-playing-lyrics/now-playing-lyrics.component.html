@@ -34,8 +34,12 @@
         <mat-spinner [diameter]="40"></mat-spinner>
     </div>
     <div *ngIf="!this.isBusy" class="app-now-playing-lyrics__text">
-        <app-rich-lyrics *ngIf="this.hasRichLyrics" [lyrics]="this.lyrics!"></app-rich-lyrics>
-        <app-plain-lyrics *ngIf="this.hasLyrics && !this.hasRichLyrics" [lyrics]="this.lyrics"></app-plain-lyrics>
+        <app-rich-lyrics *ngIf="this.hasRichLyrics && this.showRichLyrics" [lyrics]="this.lyrics!"></app-rich-lyrics>
+        <app-plain-lyrics
+            *ngIf="this.hasLyrics && (!this.hasRichLyrics || !this.showRichLyrics)"
+            [lyrics]="this.lyrics"
+            [fontSize]="this.settings.richLyricsFontSize"
+        ></app-plain-lyrics>
         <div *ngIf="!this.hasLyrics">{{ 'no-lyrics-found' | translate }}</div>
     </div>
 </div>

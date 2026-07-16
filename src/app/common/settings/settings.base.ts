@@ -15,6 +15,7 @@ export abstract class SettingsBase {
     public abstract followAlbumCoverColor: boolean;
     public abstract skipRemovedFilesDuringRefresh: boolean;
     public abstract downloadMissingAlbumCovers: boolean;
+    public abstract showArtistImages: boolean;
     public abstract showAllFoldersInCollection: boolean;
     public abstract refreshCollectionAutomatically: boolean;
     public abstract albumsRightPaneWidthPercent: number;
@@ -46,6 +47,7 @@ export abstract class SettingsBase {
     public abstract genresTabSelectedTrackOrder: string;
     public abstract enableDiscordRichPresence: boolean;
     public abstract enableLastFmScrobbling: boolean;
+    public abstract enableListenbrainzScrobbling: boolean;
     public abstract playlistsTabSelectedPlaylistFolder: string;
     public abstract playlistsTabSelectedPlaylist: string;
     public abstract playlistsTabSelectedPlaylistOrder: string;
@@ -68,6 +70,8 @@ export abstract class SettingsBase {
     public abstract lastFmUsername: string;
     public abstract lastFmPassword: string;
     public abstract lastFmSessionKey: string;
+    public abstract listenbrainzUsername: string;
+    public abstract listenbrainzToken: string;
     public abstract showLove: boolean;
     public abstract showAlbumOnNowPlayingPage: boolean;
     public abstract downloadArtistInformationFromLastFm: boolean;
@@ -98,6 +102,7 @@ export abstract class SettingsBase {
     public abstract jumpToPlayingSong: boolean;
     public abstract showSquareImages: boolean;
     public abstract useCompactYearView: boolean;
+    public abstract useCompactTrackListView: boolean;
     public abstract showAlbumArtOnDockIcon: boolean;
     public abstract miniPlayerAlwaysOnTop: boolean;
     public abstract miniPlayerLockPosition: boolean;
