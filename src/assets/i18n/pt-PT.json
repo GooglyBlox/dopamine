@@ -321,6 +321,8 @@
     "update-album-cover": "Atualizar capa do álbum",
     "multiple-values": "Vários valores",
     "multiple-images": "Várias imagens",
+    "edit-artist": "Editar artista",
+    "search-online-images": "Procurar imagens online",
     "read-tags-error-single-file": "Ocorreu um erro ao ler as etiquetas de 1 ficheiro. Consulta o ficheiro de registo para mais informações.",
     "read-tags-error-multiple-files": "Ocorreu um erro ao ler as etiquetas de {{numberOfFiles}} ficheiros. Consulta o ficheiro de registo para mais informações.",
     "save-tags-error-single-file": "Ocorreu um erro ao guardar as etiquetas de 1 ficheiro. Consulta o ficheiro de registo para mais informações.",
@@ -329,6 +331,7 @@
     "download-image-error": "Ocorreu um erro ao transferir a imagem. Consulta o ficheiro de registo para mais informações.",
     "Information": "Informação",
     "no-image-found-online": "Não foi encontrada nenhuma imagem online.",
+    "no-images-found-online": "Não foram encontradas imagens online.",
     "image": "Imagem",
     "choose-order": "Escolher ordem",
     "choose-type": "Escolher tipo",
@@ -435,6 +438,7 @@
     "edit-album": "Editar álbum",
     "update-file-covers": "Atualizar capas dos ficheiros",
     "overwrite-manually-edited-covers": "Substituir capas editadas manualmente",
+    "overwrite-manually-edited-artist-images": "Substituir imagens editadas manualmente",
     "replaygain-requires-tags": "O ReplayGain só funciona quando os ficheiros já contêm etiquetas ReplayGain.",
     "replaygain-scan-tags-external-tool": "Analisa primeiro os ficheiros com uma ferramenta externa, como",
     "replaygain-tool-rsgain": "rsgain",
@@ -443,5 +447,6 @@
     "restore-ratings-from-backup": "Restaurar",
     "ratings-restored-count": "Classificações restauradas para {{count}} músicas.",
     "tracklist": "Lista de músicas",
-    "compact-tracklist-view": "Vista compacta da lista de músicas (ocultar artistas das músicas)"
+    "compact-tracklist-view": "Vista compacta da lista de músicas (ocultar artistas das músicas)",
+    "show-artist-images-as-background": "Show artist images as background"
 }

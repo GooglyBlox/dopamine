@@ -327,6 +327,7 @@ import { ArtistArtworkCacheService } from './services/artist-artwork-cache/artis
 import { ArtistModelFactory } from './services/artist/artist-model-factory';
 import { ArtistsKeyGenerator } from './data/artists-key-generator';
 import { MusicBrainzArtworkApi } from './common/api/musicbrainz/musicbrainz-artwork.api';
+import { EditArtistDialogComponent } from './ui/components/dialogs/edit-artist-dialog/edit-artist-dialog.component';
 
 export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
     return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -505,6 +506,7 @@ export function settingsInitializerFactory(settings: SettingsBase) {
         ArtistMbidPickerDialogComponent,
         FollowedArtistsDialogComponent,
         SpotifyPlaylistsComponent,
+        EditArtistDialogComponent,
     ],
     imports: [
         BrowserAnimationsModule,

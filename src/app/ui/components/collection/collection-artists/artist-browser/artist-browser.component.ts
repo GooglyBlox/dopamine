@@ -238,6 +238,12 @@ export class ArtistBrowserComponent implements OnInit, OnDestroy {
         }
     }
 
+    public async onEditArtistAsync(artist: ArtistModel): Promise<void> {
+        if (artist !== undefined) {
+            await this.dialogService.showEditArtistAsync(artist);
+        }
+    }
+
     private orderArtists(): void {
         let orderedArtists: ArtistModel[] = [];
 

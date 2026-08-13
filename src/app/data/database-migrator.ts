@@ -23,6 +23,7 @@ import { Migration12 } from './migrations/migration12';
 import { Migration13 } from './migrations/migration13';
 import { Migration14 } from './migrations/migration14';
 import { Migration15 } from './migrations/migration15';
+import { Migration16 } from './migrations/migration16';
 
 @Injectable()
 export class DatabaseMigrator implements DatabaseMigratorBase {
@@ -42,6 +43,7 @@ export class DatabaseMigrator implements DatabaseMigratorBase {
         new Migration13(),
         new Migration14(),
         new Migration15(),
+        new Migration16(),
     ];
 
     public constructor(

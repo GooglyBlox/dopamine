@@ -855,6 +855,19 @@ describe('ArtistBrowserComponent', () => {
         });
     });
 
+    describe('onEditArtistAsync', () => {
+        it('should force shuffle and play the selected artist', async () => {
+            // Arrange
+            const component: ArtistBrowserComponent = createComponent();
+
+            // Act
+            await component.onEditArtistAsync(artist1);
+
+            // Assert
+            dialogServiceMock.verify((x) => x.showEditArtistAsync(artist1), Times.once());
+        });
+    });
+
     describe('shuffleAllAsync', () => {
         it('should force shuffle and play all tracks', async () => {
             // Arrange

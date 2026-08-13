@@ -21,6 +21,7 @@ import { TrackServiceBase } from '../../../../services/track/track.service.base'
 import { SettingsBase } from '../../../../common/settings/settings.base';
 import { SchedulerBase } from '../../../../common/scheduling/scheduler.base';
 import { TrackOrder } from '../track-order';
+import { ArtistArtworkAdder } from '../../../../services/indexing/artist-artwork-adder';
 
 @Component({
     selector: 'app-collection-artists',
@@ -45,6 +46,7 @@ export class CollectionArtistsComponent implements OnInit, OnDestroy {
         private settings: SettingsBase,
         private scheduler: SchedulerBase,
         private logger: Logger,
+        private artistArtworkAdder: ArtistArtworkAdder,
     ) {}
 
     public trackOrders: TrackOrder[] = [TrackOrder.byTrackTitleAscending, TrackOrder.byTrackTitleDescending, TrackOrder.byAlbum];
@@ -56,10 +58,29 @@ export class CollectionArtistsComponent implements OnInit, OnDestroy {
     public artists: ArtistModel[] = [];
     public albums: AlbumModel[] = [];
     public tracks: TrackModels = new TrackModels();
+    public selectedArtists: ArtistModel[] = [];
+
+    public get showArtistBackground(): boolean {
+        return (
+            this.settings.showArtistImages &&
+            this.settings.showArtistImagesAsBackground &&
+            this.selectedArtists.length === 1 &&
+            this.selectedArtists[0].artworkPath !== Constants.emptyImage
+        );
+    }
+
+    public get artistBackground(): string {
+        if (!this.showArtistBackground) {
+            return '';
+        }
+
+        return this.selectedArtists[0].artworkPath.replace(/\\/g, '/');
+    }
 
     public get selectedAlbumOrder(): AlbumOrder {
         return this._selectedAlbumOrder;
     }
+
     public set selectedAlbumOrder(v: AlbumOrder) {
         this._selectedAlbumOrder = v;
         this.albumsPersister.setSelectedAlbumOrder(v);
@@ -78,6 +99,7 @@ export class CollectionArtistsComponent implements OnInit, OnDestroy {
                 const artists: ArtistModel[] = this.getArtistsByDisplayNames(displayNames);
                 this.getAlbumsForArtists(artists);
                 this.getTracksForArtists(artists);
+                this.selectedArtists = artists;
             }),
         );
 
@@ -106,11 +128,20 @@ export class CollectionArtistsComponent implements OnInit, OnDestroy {
             }),
         );
 
+        this.subscription.add(
+            this.artistArtworkAdder.artistArtworkChanged$.subscribe(() => {
+                this.getArtists();
+            }),
+        );
+
         this.selectedAlbumOrder = this.albumsPersister.getSelectedAlbumOrder();
         await this.fillListsAsync();
     }
 
     public splitDragEnd(event: IOutputData): void {
+        this.leftPaneSize = <number>event.sizes[0];
+        this.centerPaneSize = <number>event.sizes[1];
+        this.rightPaneSize = <number>event.sizes[2];
         this.settings.artistsLeftPaneWidthPercent = <number>event.sizes[0];
         this.settings.artistsRightPaneWidthPercent = <number>event.sizes[2];
     }
@@ -136,6 +167,7 @@ export class CollectionArtistsComponent implements OnInit, OnDestroy {
         this.artists = [];
         this.albums = [];
         this.tracks = new TrackModels();
+        this.selectedArtists = [];
     }
 
     private getArtists(): void {
@@ -146,6 +178,7 @@ export class CollectionArtistsComponent implements OnInit, OnDestroy {
     private getAlbums(): void {
         const selectedArtists: ArtistModel[] = this.artistsPersister.getSelectedArtists(this.artists);
         this.getAlbumsForArtists(selectedArtists);
+        this.selectedArtists = selectedArtists;
     }
 
     private getTracks(): void {

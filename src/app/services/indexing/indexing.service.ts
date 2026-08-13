@@ -23,6 +23,7 @@ import { DuplicateGroup } from '../duplicate/duplicate-group';
 import { TrackModel } from '../track/track-model';
 import { SchedulerBase } from '../../common/scheduling/scheduler.base';
 import { ArtistArtworkIndexer } from './artist-artwork-indexer';
+import { ArtistArtworkRepositoryBase } from '../../data/repositories/artist-artwork-repository.base';
 
 @Injectable()
 export class IndexingService implements OnDestroy {
@@ -39,6 +40,7 @@ export class IndexingService implements OnDestroy {
         private albumArtworkIndexer: AlbumArtworkIndexer,
         private artistArtworkIndexer: ArtistArtworkIndexer,
         private albumArtworkRepository: AlbumArtworkRepositoryBase,
+        private artistArtworkRepository: ArtistArtworkRepositoryBase,
         private trackRepository: TrackRepositoryBase,
         private trackFiller: TrackFiller,
         private desktop: DesktopBase,
@@ -198,7 +200,10 @@ export class IndexingService implements OnDestroy {
         this.indexingFinished.next();
     }
 
-    public async indexArtistArtworkOnlyAsync(onlyWhenHasNoArtwork: boolean): Promise<void> {
+    public async indexArtistArtworkOnlyAsync(
+        onlyWhenHasNoArtwork: boolean,
+        overwriteManuallyEditedArtistImages: boolean = false,
+    ): Promise<void> {
         if (this.isIndexingCollection) {
             this.logger.info('Already indexing.', 'IndexingService', 'indexArtistArtworkOnlyAsync');
             return;
@@ -209,6 +214,9 @@ export class IndexingService implements OnDestroy {
         if (onlyWhenHasNoArtwork) {
             await this.artistArtworkIndexer.refreshMissingArtistsArtworkAsync();
         } else {
+            if (overwriteManuallyEditedArtistImages) {
+                this.artistArtworkRepository.clearManuallySetFlag();
+            }
             await this.artistArtworkIndexer.refreshAllArtistsArtworkAsync();
         }
 

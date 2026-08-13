@@ -52,7 +52,6 @@ export class AlbumBrowserComponent implements OnInit, AfterViewInit, OnChanges, 
     public readonly albumOrderKey = albumOrderKey;
 
     public albumOrderEnum: typeof AlbumOrder = AlbumOrder;
-
     public useCompactYearView: boolean = false;
 
     public ngOnDestroy(): void {
@@ -227,9 +226,9 @@ export class AlbumBrowserComponent implements OnInit, AfterViewInit, OnChanges, 
             return;
         }
 
-        const albumKeys = this.albums.map(album => album.albumKey);
+        const albumKeys = this.albums.map((album) => album.albumKey);
         const tracks: TrackModels = this.trackService.getTracksForAlbums(albumKeys);
-        
+
         this.playbackService.forceShuffled();
         await this.playbackService.enqueueAndPlayTracksAsync(tracks.tracks);
     }
