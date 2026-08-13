@@ -8,6 +8,7 @@
             <div class="duplicate-tracks__group-header">
                 <span class="duplicate-tracks__group-title">{{ group.title }}</span>
                 <span class="duplicate-tracks__group-artists"> - {{ group.artists }}</span>
+                <span *ngIf="group.album" class="duplicate-tracks__group-album">{{ group.album }}</span>
             </div>
             <div *ngFor="let track of group.tracks" class="duplicate-tracks__track d-flex align-items-center">
                 <app-toggle-switch [isChecked]="isSelected(track)" (isCheckedChange)="toggleTrack(track)"> </app-toggle-switch>

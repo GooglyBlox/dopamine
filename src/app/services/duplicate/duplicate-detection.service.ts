@@ -56,7 +56,7 @@ export class DuplicateDetectionService {
 
         const trackModels: TrackModel[] = liveTracks.map((t) => this.trackModelFactory.createFromTrack(t, this.settings.albumKeyIndex));
 
-        // Group by normalized title + artists, then split by duration tolerance
+        // Group by normalized title + artists + album, then split by duration tolerance
         const roughGroups = new Map<string, TrackModel[]>();
 
         for (const track of trackModels) {
@@ -79,7 +79,7 @@ export class DuplicateDetectionService {
 
             for (const dGroup of durationGroups) {
                 if (dGroup.length >= 2) {
-                    duplicateGroups.push(new DuplicateGroup(dGroup[0].title, dGroup[0].artists, dGroup));
+                    duplicateGroups.push(new DuplicateGroup(dGroup[0].title, dGroup[0].artists, dGroup[0].rawAlbumTitle, dGroup));
                 }
             }
         }
@@ -90,7 +90,24 @@ export class DuplicateDetectionService {
     private createGroupKey(track: TrackModel): string {
         const title = (track.rawTitle || track.fileName).toLowerCase().trim();
         const artists = track.artists.toLowerCase().trim();
-        return `${title}|||${artists}`;
+        return `${title}|||${artists}|||${this.createAlbumKey(track)}`;
+    }
+
+    /**
+     * The same song legitimately appears on several albums (a studio album and a
+     * compilation, a single and the album it later landed on, ...). Those copies
+     * share a title, an artist and a duration, but they are not duplicates, so the
+     * album is part of a track's identity here.
+     *
+     * We deliberately don't use TrackModel.albumKey: that honours the albumKeyIndex
+     * setting, which can key albums by folder, and real duplicates usually live in
+     * different folders. Album artists are included because unrelated albums do
+     * share a title ("Greatest Hits", "Live", ...).
+     */
+    private createAlbumKey(track: TrackModel): string {
+        const albumTitle = track.rawAlbumTitle.toLowerCase().trim();
+        const albumArtists = track.albumArtists.toLowerCase().trim();
+        return `${albumTitle}|||${albumArtists}`;
     }
 
     /**
